@@ -39,6 +39,14 @@
 #include "algorithm/yescrypt.h"
 #include "algorithm/lyra2rev2.h"
 
+#if HAVE_ADL
+#include "adl.h"
+extern bool adl_active;
+#endif
+#if HAVE_NVML
+extern bool nvml_active;
+#endif
+
 /* FIXME: only here for global config vars, replace with configuration.h
  * or similar as soon as config is in a struct instead of littered all
  * over the global namespace.
@@ -183,14 +191,15 @@ static cl_int create_opencl_command_queue(cl_command_queue *command_queue, cl_co
 _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *algorithm)
 {
   cl_int status = 0;
-	size_t compute_units = 0;
-	cl_platform_id platform = NULL;
-	struct cgpu_info *cgpu = &gpus[gpu];
-	_clState *clState = (_clState *)calloc(1, sizeof(_clState));
-	cl_uint preferred_vwidth, numDevices = clDevicesNum();
-	cl_device_id *devices = (cl_device_id *)alloca(numDevices * sizeof(cl_device_id));
-	build_kernel_data *build_data = (build_kernel_data *)alloca(sizeof(struct _build_kernel_data));
-	char **pbuff = (char **)alloca(sizeof(char *) * numDevices), filename[256];
+  size_t compute_units = 0;
+  cl_platform_id platform = NULL;
+  struct cgpu_info *cgpu = &gpus[gpu];
+  bool amd_platform = false, nvidia_platform = false;
+  _clState *clState = (_clState *)calloc(1, sizeof(_clState));
+  cl_uint preferred_vwidth, slot = 0, cpnd = 0, numDevices = clDevicesNum();
+  cl_device_id *devices = (cl_device_id *)alloca(numDevices * sizeof(cl_device_id));
+  build_kernel_data *build_data = (build_kernel_data *)alloca(sizeof(struct _build_kernel_data));
+  char **pbuff = (char **)alloca(sizeof(char *) * numDevices), filename[256];
 
   // sanity check
   if (!get_opencl_platform(opt_platform_id, &platform)) {
@@ -217,7 +226,8 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
 
   applog(LOG_INFO, "List of devices:");
 
-  for (int i = 0; i < numDevices; ++i)	{
+  for (cl_uint i = 0; i < numDevices; ++i)
+  {
     size_t tmpsize;
     if (clGetDeviceInfo(devices[i], CL_DEVICE_NAME, 0, NULL, &tmpsize) != CL_SUCCESS) {
       applog(LOG_ERR, "Error while getting the length of the name for GPU #%d.", i);
@@ -228,13 +238,15 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     pbuff[i] = (char *)alloca(sizeof(char) * (tmpsize + 1));
     if (clGetDeviceInfo(devices[i], CL_DEVICE_NAME, sizeof(char) * tmpsize, pbuff[i], NULL) != CL_SUCCESS) {
       applog(LOG_ERR, "Error while attempting to get device information.");
-		  return NULL;
+      return NULL;
     }
 
+    amd_platform = (strstr(pbuff[i], "ATI") || strstr(pbuff[i], "AMD"));
+    nvidia_platform = (strstr(pbuff[i], "NVIDIA") || strstr(pbuff[i], "GeForce") || strstr(pbuff[i], "Tesla") || strstr(pbuff[i], "Quadro"));
     applog(LOG_INFO, "\t%i\t%s", i, pbuff[i]);
-	}
-	
-	applog(LOG_INFO, "Selected %d: %s", gpu, pbuff[gpu]);
+  }
+
+  applog(LOG_INFO, "Selected %d: %s", gpu, pbuff[gpu]);
   strncpy(name, pbuff[gpu], nameSize);
   
   status = create_opencl_context(&clState->context, &platform);
@@ -281,6 +293,22 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     return NULL;
   }
   applog(LOG_DEBUG, "Max mem alloc size is %lu", (long unsigned int)(cgpu->max_alloc));
+
+#ifdef HAVE_NVML
+  if(nvidia_platform) {
+    if(!opt_nonvml) {
+      if(!nvml_active) {
+        nvml_init();
+        nvml_active = true;
+      }
+      cgpu->has_nvml = true;
+      applog(LOG_INFO, "NVIDIA management enabled on GPU %u", gpu);
+    } else {
+      cgpu->has_nvml = false;
+      applog(LOG_INFO, "NVIDIA management disabled on GPU %u", gpu);
+    }
+  }
+#endif
 
   /* Create binary filename based on parameters passed to opencl
    * compiler to ensure we only load a binary that matches what

@@ -53,7 +53,10 @@ char *curly = ":D";
 #include "compat.h"
 #include "miner.h"
 #include "findnonce.h"
+#ifdef HAVE_ADL
 #include "adl.h"
+#endif
+
 #include "driver-opencl.h"
 #include "bench_block.h"
 
@@ -143,7 +146,16 @@ static bool opt_lowmem;
 static bool opt_morenotices;
 bool opt_autofan;
 bool opt_autoengine;
+
 bool opt_noadl;
+bool opt_nonvml;
+#if HAVE_ADL
+bool adl_active = false;
+#endif
+#if HAVE_NVML
+bool nvml_active = false;
+#endif
+
 char *opt_api_allow = NULL;
 char *opt_api_groups;
 char *opt_api_description = PACKAGE_STRING;
@@ -1542,6 +1554,15 @@ struct opt_table opt_config_table[] = {
 #else
   OPT_WITHOUT_ARG("--no-adl",
       opt_set_bool, &opt_noadl, opt_hidden),
+#endif
+#ifdef HAVE_NVML
+  OPT_WITHOUT_ARG("--no-nvml",
+      opt_set_bool, &opt_nonvml,
+      "Disable the NVIDIA Managment Library used for monitoring GPU parameters"),
+#else
+  OPT_WITHOUT_ARG("--no-nvml",
+      opt_set_bool, &opt_nonvml,
+      opt_hidden),
 #endif
   OPT_WITHOUT_ARG("--no-pool-disable",
       opt_set_invbool, &opt_disable_pool,
@@ -8101,9 +8122,6 @@ void print_summary(void)
 
 static void clean_up(bool restarting)
 {
-#ifdef HAVE_ADL
-  clear_adl(nDevs);
-#endif
   cgtime(&total_tv_end);
 #ifdef WIN32
   timeEndPeriod(1);
@@ -8113,6 +8131,13 @@ static void clean_up(bool restarting)
 #endif
   if (!restarting && !opt_realquiet && successful_connect)
     print_summary();
+
+#ifdef HAVE_ADL
+  clear_adl(nDevs);
+#endif
+#ifdef HAVE_NVML
+  if (nvml_active) nvml_shutdown();
+#endif
 
   curl_global_cleanup();
 }

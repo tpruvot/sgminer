@@ -37,7 +37,7 @@
 # define wlogprint(...)  applog(LOG_WARNING, __VA_ARGS__)
 #endif
 
-bool adl_active;
+extern bool adl_active;
 bool opt_reorder = false;
 
 int opt_hysteresis = 3;
@@ -117,7 +117,7 @@ static  ADL_OVERDRIVE6_POWERCONTROL_SET   ADL_Overdrive6_PowerControl_Set;
 #if defined (UNIX)
   static void *hDLL;  // Handle to .so library
 #else
-  HINSTANCE hDLL;   // Handle to DLL
+  static HINSTANCE hDLL;   // Handle to DLL
 #endif
 static int iNumberAdapters;
 static LPAdapterInfo lpInfo = NULL;
@@ -275,7 +275,7 @@ static bool prepare_adl(void)
     hDLL = LoadLibrary("atiadlxy.dll");
 #endif
   if (hDLL == NULL) {
-    applog(LOG_INFO, "Unable to load ATI ADL library.");
+    applog(LOG_INFO, "Unable to load the AMD Display Library");
     return false;
   }
   ADL_Main_Control_Create = (ADL_MAIN_CONTROL_CREATE) GetProcAddress(hDLL,"ADL_Main_Control_Create");
@@ -437,9 +437,11 @@ void init_adl(int nDevs)
   }
 
   if (devices < nDevs) {
+#ifndef HAVE_NVML
     applog(LOG_ERR, "ADL found less devices (%d) than OpenCL (%d)!", devices, nDevs);
     applog(LOG_ERR, "There is possibly more than one display attached to a GPU");
     applog(LOG_ERR, "Use the gpu map feature to reliably map OpenCL to ADL");
+#endif
     devs_match = false;
   }
 
@@ -459,8 +461,10 @@ void init_adl(int nDevs)
   }
 
   if (!devs_match) {
+#ifndef HAVE_NVML
     applog(LOG_ERR, "WARNING: Number of OpenCL and ADL devices did not match!");
     applog(LOG_ERR, "Hardware monitoring may NOT match up with devices!");
+#endif
   } else if (opt_reorder) {
     /* Windows has some kind of random ordering for bus number IDs and
      * ordering the GPUs according to ascending order fixes it. Linux

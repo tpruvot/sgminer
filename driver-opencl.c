@@ -48,7 +48,6 @@ extern int opt_g_threads;
 extern bool opt_loginput;
 extern char *opt_kernel_path;
 extern int gpur_thr_id;
-extern bool opt_noadl;
 
 extern void *miner_thread(void *userdata);
 extern int dev_from_id(int thr_id);
@@ -1221,10 +1220,10 @@ static void reinit_opencl_device(struct cgpu_info *gpu)
   tq_push(control_thr[gpur_thr_id].q, gpu);
 }
 
-#ifdef HAVE_ADL
 static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_info *gpu)
 {
   if (gpu->has_adl) {
+#ifdef HAVE_ADL
     int gpuid = gpu->device_id;
     float gt = gpu_temp(gpuid);
     int gf = gpu_fanspeed(gpuid);
@@ -1242,11 +1241,30 @@ static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_inf
     else
       tailsprintf(buf, bufsiz, "        ");
     tailsprintf(buf, bufsiz, "| ");
+#endif
+  }
+  else if(!opt_nonvml && gpu->has_nvml) {
+#ifdef HAVE_NVML
+    int gpuid = gpu->device_id, fanspeed;
+    float temp;
+
+    nvml_gpu_temp_and_fanspeed(gpuid, &temp, &fanspeed); // percent
+
+    if(temp > 0.0)
+      tailsprintf(buf, bufsiz, "%5.1fC ", temp);
+    else
+      tailsprintf(buf, bufsiz, "       ");
+
+    if(fanspeed > 0)
+      tailsprintf(buf, bufsiz, " FAN%3d%% ", fanspeed);
+    else
+      tailsprintf(buf, bufsiz, "        ");
+    tailsprintf(buf, bufsiz, "| ");
+#endif
   }
   else
     gpu->drv->get_statline_before = &blank_get_statline_before;
 }
-#endif
 
 static void get_opencl_statline(char *buf, size_t bufsiz, struct cgpu_info *gpu)
 {

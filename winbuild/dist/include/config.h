@@ -8,7 +8,8 @@
 #define HAVE_LIBCURL 1
 #define CURL_HAS_KEEPALIVE 1
 #define HAVE_CURSES 1
-//#define HAVE_ADL 1
+#define HAVE_ADL 1
+#define HAVE_NVML 1
 
 #define STDC_HEADERS 1
 #define EXECV_2ND_ARG_TYPE char* const*

@@ -299,6 +299,7 @@
     <ClCompile Include="..\algorithm\marucoin.c" />
     <ClCompile Include="..\algorithm\maxcoin.c" />
     <ClCompile Include="..\algorithm\myriadcoin-groestl.c" />
+    <ClCompile Include="..\nvml.c" />
     <ClCompile Include="..\ocl.c" />
     <ClCompile Include="..\ocl\binary_kernel.c" />
     <ClCompile Include="..\ocl\build_kernel.c" />

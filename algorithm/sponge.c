@@ -25,7 +25,6 @@
 #include "lyra2.h"
 
 
-
 /**
  * Initializes the Sponge State. The first 512 bits are set to zeros and the remainder 
  * receive Blake2b's IV as per Blake2b's specification. <b>Note:</b> Even though sponges

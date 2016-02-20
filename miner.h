@@ -242,6 +242,16 @@ static inline int fsync (int fd)
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
+#ifdef HAVE_NVML
+#if defined(__linux__) || defined(_WIN32)
+#include "NVML/nvml.h"
+#endif
+void nvml_init();
+void nvml_gpu_temp_and_fanspeed(const unsigned int, float *, int *);
+void nvml_print_devices();
+void nvml_shutdown();
+#endif
+
 /* Adding a device here will update all macros in the code that use
  * the *_PARSE_COMMANDS macros for each listed driver.
  */
@@ -286,7 +296,6 @@ DRIVER_PARSE_COMMANDS(DRIVER_PROTOTYPE)
 extern int opt_remoteconf_retry;
 extern int opt_remoteconf_wait;
 extern bool opt_remoteconf_usecache;
-
 
 enum alive {
   LIFE_WELL,
@@ -582,6 +591,10 @@ struct cgpu_info {
   float temp;
   int cutofftemp;
 
+#ifdef HAVE_NVML
+  bool has_nvml;
+#endif
+
 #ifdef HAVE_ADL
   bool has_adl;
   struct gpu_adl adl;
@@ -595,6 +608,7 @@ struct cgpu_info {
   int gpu_powertune;
   float gpu_vddc;
 #endif
+
   double diff1;
   double diff_accepted;
   double diff_rejected;
@@ -1083,6 +1097,8 @@ extern int opt_shares;
 extern bool opt_fail_only;
 extern int opt_fail_switch_delay;
 extern int opt_watchpool_refresh;
+extern bool opt_noadl;
+extern bool opt_nonvml;
 extern bool opt_autofan;
 extern bool opt_autoengine;
 extern bool use_curses;

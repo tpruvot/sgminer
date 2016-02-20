@@ -111,6 +111,19 @@ case $target in
 	;;
 esac
 
+nvml="yes"
+
+AC_ARG_ENABLE([nvml],
+	[AC_HELP_STRING([--disable-nvml],[Build with no NVML GPU monitoring (default enabled)])],
+	[nvml=$enableval]
+	)
+if test "x$nvml" = xyes; then
+	nvml="$opencl"
+	if test "x$opencl" = xyes; then
+		AC_DEFINE([HAVE_NVML], [1], [Defined if the NVML header was found])
+	fi
+fi
+
 
 if test "x$have_win32" != xtrue; then
 	if test "x$have_x86_64" = xtrue; then
@@ -424,6 +437,14 @@ if test "x$adl" != xno; then
 	fi
 else
 	echo "  ADL..................: Detection overrided. GPU monitoring support DISABLED"
+fi
+
+if test "x$nvml" = xyes; then
+	echo "    NVML monitoring....: Enabled"
+elif test "x$opencl" = xyes; then
+	echo "    NVML monitoring....: Disabled"
+else
+	echo "    NVML monitoring....: n/a"
 fi
 
 echo
