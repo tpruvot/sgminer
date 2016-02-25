@@ -132,6 +132,10 @@ typedef sph_blake_big_context sph_blake512_context;
 
 #endif
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 /**
  * Initialize a BLAKE-224 context. This process performs no memory allocation.
  *
@@ -178,6 +182,11 @@ void sph_blake224_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 /**
+ * Specify BLAKE-256 rounds.
+ */
+void sph_blake256_set_rounds(int rounds);
+
+/**
  * Initialize a BLAKE-256 context. This process performs no memory allocation.
  *
  * @param cc   the BLAKE-256 context (pointer to a
@@ -194,7 +203,6 @@ void sph_blake256_init(void *cc);
  * @param len    the input data length (in bytes)
  */
 void sph_blake256(void *cc, const void *data, size_t len);
-void sph_blake256r8(void *cc, const void *data, size_t len);
 
 /**
  * Terminate the current BLAKE-256 computation and output the result into
@@ -206,7 +214,6 @@ void sph_blake256r8(void *cc, const void *data, size_t len);
  * @param dst   the destination buffer
  */
 void sph_blake256_close(void *cc, void *dst);
-void sph_blake256r8_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -222,8 +229,6 @@ void sph_blake256r8_close(void *cc, void *dst);
  * @param dst   the destination buffer
  */
 void sph_blake256_addbits_and_close(
-	void *cc, unsigned ub, unsigned n, void *dst);
-void sph_blake256r8_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 #if SPH_64
@@ -318,6 +323,10 @@ void sph_blake512_close(void *cc, void *dst);
 void sph_blake512_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
+#endif
+
+#ifdef __cplusplus
+} extern "C"
 #endif
 
 #endif

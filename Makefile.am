@@ -27,7 +27,7 @@ endif
 sgminer_CPPFLAGS += $(ADL_CPPFLAGS)
 
 if USE_GIT_VERSION
-GIT_VERSION      := $(shell sh -c 'git describe --abbrev=4 --dirty')
+GIT_VERSION      := $(shell sh -c 'git describe --tags --abbrev=4')
 sgminer_CPPFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 endif
 
@@ -72,13 +72,13 @@ sgminer_SOURCES += algorithm/fresh.c algorithm/fresh.h
 sgminer_SOURCES += algorithm/whirlcoin.c algorithm/whirlcoin.h
 sgminer_SOURCES += algorithm/neoscrypt.c algorithm/neoscrypt.h
 sgminer_SOURCES += algorithm/whirlpoolx.c algorithm/whirlpoolx.h
-sgminer_SOURCES += algorithm/lyra2re.c algorithm/lyra2re.h algorithm/lyra2.c algorithm/lyra2.h algorithm/sponge.c algorithm/sponge.h
-sgminer_SOURCES += algorithm/lyra2rev2.c algorithm/lyra2rev2.h
+sgminer_SOURCES += algorithm/lyra2re.c algorithm/lyra2.c algorithm/sponge.c algorithm/lyra2rev2.c
 sgminer_SOURCES += algorithm/pluck.c algorithm/pluck.h
 sgminer_SOURCES += algorithm/credits.c algorithm/credits.h
-sgminer_SOURCES += algorithm/yescrypt.h algorithm/yescrypt.c algorithm/yescrypt_core.h algorithm/yescrypt-opt.c algorithm/yescryptcommon.c algorithm/sysendian.h 
+sgminer_SOURCES += algorithm/yescrypt.c algorithm/yescrypt-opt.c algorithm/yescryptcommon.c
 sgminer_SOURCES += algorithm/blake256.c algorithm/blake256.h
 sgminer_SOURCES += algorithm/blakecoin.c algorithm/blakecoin.h
+sgminer_SOURCES += algorithm/decred.c
 
 bin_SCRIPTS	= $(top_srcdir)/kernel/*.cl
 

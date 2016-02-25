@@ -32,8 +32,6 @@
 #include <stdint.h>
 #include <string.h>
 
-
-
 static const uint32_t sha256_h[8] = {
 	0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
 	0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
@@ -199,20 +197,7 @@ be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len)
 	for (i = 0; i < len; i++)
 		dst[i] = htobe32(src[i]);
 }
-static inline void be32enc(void *pp, uint32_t x)
-{
-	uint8_t *p = (uint8_t *)pp;
-	p[3] = x & 0xff;
-	p[2] = (x >> 8) & 0xff;
-	p[1] = (x >> 16) & 0xff;
-	p[0] = (x >> 24) & 0xff;
-}
-static inline uint32_t be32dec(const void *pp)
-{
-	const uint8_t *p = (uint8_t const *)pp;
-	return ((uint32_t)(p[3]) + ((uint32_t)(p[2]) << 8) +
-		((uint32_t)(p[1]) << 16) + ((uint32_t)(p[0]) << 24));
-}
+
 #define ROTL(a, b) (((a) << (b)) | ((a) >> (32 - (b))))
 //note, this is 64 bytes
 static inline void xor_salsa8(uint32_t B[16], const uint32_t Bx[16])

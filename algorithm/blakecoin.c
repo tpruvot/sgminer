@@ -56,10 +56,13 @@ static const uint32_t diff1targ_blake256 = 0x000000ff;
 
 inline void blakecoinhash(void *state, const void *input)
 {
-  sph_blake256_context     ctx_blake;
-  sph_blake256_init(&ctx_blake);
-  sph_blake256r8(&ctx_blake, input, 80);
-  sph_blake256r8_close(&ctx_blake, state);
+	sph_blake256_context ctx_blake;
+
+	sph_blake256_set_rounds(8);
+
+	sph_blake256_init(&ctx_blake);
+	sph_blake256(&ctx_blake, input, 80);
+	sph_blake256_close(&ctx_blake, state);
 }
 
 void precalc_hash_blakecoin(dev_blk_ctx *blk, uint32_t *state, uint32_t *pdata)
@@ -69,8 +72,10 @@ void precalc_hash_blakecoin(dev_blk_ctx *blk, uint32_t *state, uint32_t *pdata)
 
 	be32enc_vect(data, (const uint32_t *)pdata, 16);
 
+	sph_blake256_set_rounds(8);
+
 	sph_blake256_init(&ctx_blake);
-	sph_blake256r8(&ctx_blake, data, 64);
+	sph_blake256(&ctx_blake, data, 64);
 
 	blk->ctx_a = ctx_blake.H[0];
 	blk->ctx_b = ctx_blake.H[1];

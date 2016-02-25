@@ -36,7 +36,8 @@ typedef enum {
   ALGO_YESCRYPT_MULTI,
   ALGO_BLAKECOIN,
   ALGO_BLAKE,
-  ALGO_VANILLA
+  ALGO_DECRED,
+  ALGO_VANILLA,
 } algorithm_type_t;
 
 extern const char *algorithm_type_str[];

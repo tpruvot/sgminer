@@ -8,10 +8,6 @@
  * any later version.  See COPYING for more details.
  */
 
-#include "config.h"
-
-#include <unistd.h>
-
 #include "logging.h"
 #include "miner.h"
 
@@ -193,4 +189,11 @@ void __debug(const char *filename, const char *fmt, ...)
   fprintf(f, "\n");
 
   fclose(f);
+}
+
+void applog_hex(void* data, int len)
+{
+  char *hex = bin2hex((unsigned char*)data, len);
+  applog(LOG_NOTICE, "%s", hex);
+  free(hex);
 }

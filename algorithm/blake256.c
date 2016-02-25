@@ -56,10 +56,13 @@ static const uint32_t diff1targ_blake256 = 0x000000ff;
 
 inline void blake256hash(void *state, const void *input)
 {
-  sph_blake256_context ctx_blake;
-  sph_blake256_init(&ctx_blake);
-  sph_blake256(&ctx_blake, input, 80);
-  sph_blake256_close(&ctx_blake, state);
+	sph_blake256_context ctx_blake;
+
+	sph_blake256_set_rounds(14);
+
+	sph_blake256_init(&ctx_blake);
+	sph_blake256(&ctx_blake, input, 80);
+	sph_blake256_close(&ctx_blake, state);
 }
 
 void precalc_hash_blake256(dev_blk_ctx *blk, uint32_t *state, uint32_t *pdata)
@@ -68,6 +71,8 @@ void precalc_hash_blake256(dev_blk_ctx *blk, uint32_t *state, uint32_t *pdata)
 	uint32_t data[16];
 
 	be32enc_vect(data, (const uint32_t *)pdata, 16);
+
+	sph_blake256_set_rounds(14);
 
 	sph_blake256_init(&ctx_blake);
 	sph_blake256(&ctx_blake, data, 64);

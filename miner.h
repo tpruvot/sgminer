@@ -14,6 +14,7 @@
 #define CGMINER_VERSION VERSION
 #endif
 
+#include "algorithm/sysendian.h"
 #include "algorithm.h"
 
 #include <stdbool.h>
@@ -206,7 +207,12 @@ static inline int fsync (int fd)
 #define unlikely(expr) (expr)
 #define likely(expr) (expr)
 #endif
+
+#ifndef _MSC_VER
 #define __maybe_unused    __attribute__((unused))
+#else
+#define __maybe_unused
+#endif
 
 #define uninitialised_var(x) x = x
 
@@ -743,6 +749,15 @@ static inline void flip168(void *dest_p, const void *src_p)
 		dest[i] = swab32(src[i]);
 }
 
+static inline void flip180(void *dest_p, const void *src_p)
+{
+	uint32_t *dest = (uint32_t *)dest_p;
+	const uint32_t *src = (uint32_t *)src_p;
+	int i;
+
+	for (i = 0; i < 45; i++)
+		dest[i] = swab32(src[i]);
+}
 
 /* For flipping to the correct endianness if necessary */
 #if defined(__BIG_ENDIAN__) || defined(MIPSEB)
@@ -750,28 +765,33 @@ static inline void endian_flip32(void *dest_p, const void *src_p)
 {
   flip32(dest_p, src_p);
 }
-
 static inline void endian_flip128(void *dest_p, const void *src_p)
 {
   flip128(dest_p, src_p);
 }
 static inline void endian_flip168(void *dest_p, const void *src_p)
 {
-	flip168(dest_p, src_p);
+  flip168(dest_p, src_p);
 }
-
+static inline void endian_flip180(void *dest_p, const void *src_p)
+{
+  flip180(dest_p, src_p);
+}
 #else
 static inline void
 endian_flip32(void __maybe_unused *dest_p, const void __maybe_unused *src_p)
 {
 }
-
 static inline void
 endian_flip128(void __maybe_unused *dest_p, const void __maybe_unused *src_p)
 {
 }
 static inline void
 endian_flip168(void __maybe_unused *dest_p, const void __maybe_unused *src_p)
+{
+}
+static inline void
+endian_flip180(void __maybe_unused *dest_p, const void __maybe_unused *src_p)
 {
 }
 #endif
@@ -1197,8 +1217,6 @@ extern bool opt_removedisabled;
 extern struct cgpu_info **devices;
 extern int total_pools;
 extern struct pool **pools;
-extern struct strategies strategies[];
-extern enum pool_strategy pool_strategy;
 extern int opt_rotate_period;
 extern double total_rolling;
 extern double total_mhashes_done;
@@ -1227,6 +1245,7 @@ typedef struct _dev_blk_ctx {
   cl_uint ctx_e; cl_uint ctx_f; cl_uint ctx_g; cl_uint ctx_h;
   cl_uint cty_a; cl_uint cty_b; cl_uint cty_c; cl_uint cty_d;
   cl_uint cty_e; cl_uint cty_f; cl_uint cty_g; cl_uint cty_h;
+  cl_uint cty_i; cl_uint cty_j; cl_uint cty_k; cl_uint cty_l;
   cl_uint merkle; cl_uint ntime; cl_uint nbits; cl_uint nonce;
   cl_uint fW0; cl_uint fW1; cl_uint fW2; cl_uint fW3; cl_uint fW15;
   cl_uint fW01r; cl_uint fcty_e; cl_uint fcty_e2;
@@ -1437,7 +1456,7 @@ struct pool {
 #define GETWORK_MODE_GBT 'G'
 
 struct work {
-  unsigned char data[168];
+  unsigned char data[192];
   unsigned char midstate[32];
   unsigned char target[32];
   unsigned char hash[32];

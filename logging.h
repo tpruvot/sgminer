@@ -37,6 +37,8 @@ void vapplogsiz(int prio, int size, const char* fmt, va_list args);
 
 extern void _applog(int prio, const char *str, bool force);
 
+void applog_hex(void* data, int len);
+
 #define IN_FMT_FFL " in %s %s():%d"
 
 #define forcelog(prio, fmt, ...) do { \

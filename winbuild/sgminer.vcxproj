@@ -122,6 +122,7 @@
       <Command>
         del /f "$(OutDir)*.exe"
         del /f "$(OutDir)*.dll"
+        del /f "$(ProjectDir)\..\config.h"
 
         echo #define USE_GIT_VERSION 1 &gt; "$(ProjectDir)dist\include\gitversion.h"
         FOR /F "tokens=*" %%i IN ('call git describe "--abbrev=4" --dirty') DO echo #define GIT_VERSION "%%i" &gt;&gt; "$(ProjectDir)dist\include\gitversion.h"
@@ -164,6 +165,7 @@
       <Command>
         del /f "$(OutDir)*.exe"
         del /f "$(OutDir)*.dll"
+        del /f "$(ProjectDir)\..\config.h"
 
         echo #define USE_GIT_VERSION 1 &gt; "$(ProjectDir)dist\include\gitversion.h"
         FOR /F "tokens=*" %%i IN ('call git describe "--abbrev=4" --dirty') DO echo #define GIT_VERSION "%%i" &gt;&gt; "$(ProjectDir)dist\include\gitversion.h"
@@ -207,6 +209,7 @@
       <Command>
         del /f "$(OutDir)*.exe"
         del /f "$(OutDir)*.dll"
+        del /f "$(ProjectDir)\..\config.h"
 
         echo #define USE_GIT_VERSION 1 &gt; "$(ProjectDir)dist\include\gitversion.h"
         FOR /F "tokens=*" %%i IN ('call git describe "--abbrev=4" --dirty') DO echo #define GIT_VERSION "%%i" &gt;&gt; "$(ProjectDir)dist\include\gitversion.h"
@@ -227,7 +230,6 @@
       <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)dist\include\;$(ProjectDir)..\submodules\jansson\src\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
@@ -251,6 +253,7 @@
       <Command>
         del /f "$(OutDir)*.exe"
         del /f "$(OutDir)*.dll"
+        del /f "$(ProjectDir)\..\config.h"
 
         echo #define USE_GIT_VERSION 1 &gt; "$(ProjectDir)dist\include\gitversion.h"
         FOR /F "tokens=*" %%i IN ('call git describe "--abbrev=4" --dirty') DO echo #define GIT_VERSION "%%i" &gt;&gt; "$(ProjectDir)dist\include\gitversion.h"
@@ -263,7 +266,10 @@
     <ClCompile Include="..\algorithm.c" />
     <ClCompile Include="..\algorithm\animecoin.c" />
     <ClCompile Include="..\algorithm\bitblock.c" />
+    <ClCompile Include="..\algorithm\blakecoin.c" />
+    <ClCompile Include="..\algorithm\blake256.c" />
     <ClCompile Include="..\algorithm\credits.c" />
+    <ClCompile Include="..\algorithm\decred.c" />
     <ClCompile Include="..\algorithm\lyra2.c" />
     <ClCompile Include="..\algorithm\lyra2re.c" />
     <ClCompile Include="..\algorithm\lyra2rev2.c" />
@@ -330,7 +336,9 @@
     <ClInclude Include="..\algorithm.h" />
     <ClInclude Include="..\algorithm\animecoin.h" />
     <ClInclude Include="..\algorithm\bitblock.h" />
+    <ClInclude Include="..\algorithm\blake256.h" />
     <ClInclude Include="..\algorithm\credits.h" />
+    <ClInclude Include="..\algorithm\decred.h" />
     <ClInclude Include="..\algorithm\lyra2.h" />
     <ClInclude Include="..\algorithm\lyra2re.h" />
     <ClInclude Include="..\algorithm\lyra2rev2.h" />
