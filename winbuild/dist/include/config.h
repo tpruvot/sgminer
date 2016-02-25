@@ -8,7 +8,7 @@
 #define HAVE_LIBCURL 1
 #define CURL_HAS_KEEPALIVE 1
 #define HAVE_CURSES 1
-#define HAVE_ADL 1
+//#define HAVE_ADL 1
 
 #define STDC_HEADERS 1
 #define EXECV_2ND_ARG_TYPE char* const*
@@ -58,6 +58,9 @@
 
 #ifdef HAVE_LIBCURL
 #define CURL_STATICLIB 1
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "zlib.lib")
+#pragma comment(lib, "openssl.lib")
 #pragma comment(lib, "libcurl_a.lib")
 #endif
 
@@ -76,7 +79,7 @@
 
 #define SGMINER_PREFIX ""
 
-#include "gitversion.h"
+//#include "gitversion.h"
 #include "winbuild.h"
 
 #endif
