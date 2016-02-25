@@ -28,6 +28,7 @@
  * ===========================(LICENSE END)=============================
  *
  * @author   phm <phm@inbox.com>
+ *
  */
 
 #ifndef X14_CL
@@ -45,13 +46,8 @@
 
 typedef unsigned int sph_u32;
 typedef int sph_s32;
-#ifndef __OPENCL_VERSION__
-  typedef unsigned long long sph_u64;
-  typedef long long sph_s64;
-#else
-  typedef unsigned long sph_u64;
-  typedef long sph_s64;
-#endif
+typedef unsigned long sph_u64;
+typedef long sph_s64;
 
 #define SPH_64 1
 #define SPH_64_TRUE 1
@@ -63,8 +59,9 @@ typedef int sph_s32;
 
 #define SPH_C64(x)    ((sph_u64)(x ## UL))
 #define SPH_T64(x) (as_ulong(x))
-#define SPH_ROTL64(x, n) rotate(as_ulong(x), (n) & 0xFFFFFFFFFFFFFFFFUL)
-#define SPH_ROTR64(x, n)   SPH_ROTL64(x, (64 - (n)))
+#define SPH_ROTL64(x, n) rotate(as_ulong(x), (ulong) (n))
+#define SPH_ROTR64(x, n)   SPH_ROTL64(x, 64U - (n))
+#define SWAP64(x, n) rotate(as_ulong(x), 32UL)
 
 #define SPH_ECHO_64 1
 #define SPH_KECCAK_64 1
@@ -120,7 +117,7 @@ typedef int sph_s32;
 #define SHR(x, n) ((x) >> (n))
 
 #define CONST_EXP2  q[i+0] + SPH_ROTL64(q[i+1], 5)  + q[i+2] + SPH_ROTL64(q[i+3], 11) + \
-                    q[i+4] + SPH_ROTL64(q[i+5], 27) + q[i+6] + SPH_ROTL64(q[i+7], 32) + \
+                    q[i+4] + SPH_ROTL64(q[i+5], 27) + q[i+6] + SWAP64(q[i+7], 32) + \
                     q[i+8] + SPH_ROTL64(q[i+9], 37) + q[i+10] + SPH_ROTL64(q[i+11], 43) + \
                     q[i+12] + SPH_ROTL64(q[i+13], 53) + (SHR(q[i+14],1) ^ q[i+14]) + (SHR(q[i+15],2) ^ q[i+15])
 
@@ -271,7 +268,7 @@ __kernel void search1(__global hash_t* hashes)
       (SHR(q[i+13], 2) ^ SHL(q[i+13], 1) ^ SPH_ROTL64(q[i+13], 19) ^ SPH_ROTL64(q[i+13], 53)) +
       (SHR(q[i+14], 2) ^ SHL(q[i+14], 2) ^ SPH_ROTL64(q[i+14], 28) ^ SPH_ROTL64(q[i+14], 59)) +
       (SHR(q[i+15], 1) ^ SHL(q[i+15], 3) ^ SPH_ROTL64(q[i+15], 4) ^ SPH_ROTL64(q[i+15], 37)) +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i+10], i+11) ) ^ BMW_H[i+7]);
   }
 
@@ -279,7 +276,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=2;i<6;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i+10], i+11) ) ^ BMW_H[i+7]);
   }
 
@@ -287,7 +284,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=6;i<9;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i-6], (i-6)+1) ) ^ BMW_H[i+7]);
   }
 
@@ -295,7 +292,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=9;i<13;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i-6], (i-6)+1) ) ^ BMW_H[i-9]);
   }
 
@@ -303,7 +300,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=13;i<16;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i-13], (i-13)+1) - SPH_ROTL64(mv[i-6], (i-6)+1) ) ^ BMW_H[i-9]);
   }
 
@@ -332,7 +329,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=0;i<16;i++)
   {
     mv[i] = BMW_H[i];
-    BMW_H[i] = 0xaaaaaaaaaaaaaaa0ull + (sph_u64)i;
+    BMW_H[i] = 0xaaaaaaaaaaaaaaa0ul + (sph_u64)i;
   }
 
   tmp = (mv[5] ^ BMW_H[5]) - (mv[7] ^ BMW_H[7]) + (mv[10] ^ BMW_H[10]) + (mv[13] ^ BMW_H[13]) + (mv[14] ^ BMW_H[14]);
@@ -388,7 +385,7 @@ __kernel void search1(__global hash_t* hashes)
       (SHR(q[i+13], 2) ^ SHL(q[i+13], 1) ^ SPH_ROTL64(q[i+13], 19) ^ SPH_ROTL64(q[i+13], 53)) +
       (SHR(q[i+14], 2) ^ SHL(q[i+14], 2) ^ SPH_ROTL64(q[i+14], 28) ^ SPH_ROTL64(q[i+14], 59)) +
       (SHR(q[i+15], 1) ^ SHL(q[i+15], 3) ^ SPH_ROTL64(q[i+15], 4) ^ SPH_ROTL64(q[i+15], 37)) +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i+10], i+11) ) ^ BMW_H[i+7]);
   }
 
@@ -396,7 +393,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=2;i<6;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i+10], i+11) ) ^ BMW_H[i+7]);
   }
 
@@ -404,7 +401,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=6;i<9;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i-6], (i-6)+1) ) ^ BMW_H[i+7]);
   }
 
@@ -412,7 +409,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=9;i<13;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i+3], i+4) - SPH_ROTL64(mv[i-6], (i-6)+1) ) ^ BMW_H[i-9]);
   }
 
@@ -420,7 +417,7 @@ __kernel void search1(__global hash_t* hashes)
   for(int i=13;i<16;i++)
   {
     q[i+16] = CONST_EXP2 +
-      (( ((i+16)*(0x0555555555555555ull)) + SPH_ROTL64(mv[i], i+1) +
+      (( ((i+16)*(0x0555555555555555ul)) + SPH_ROTL64(mv[i], i+1) +
       SPH_ROTL64(mv[i-13], (i-13)+1) - SPH_ROTL64(mv[i-6], (i-6)+1) ) ^ BMW_H[i-9]);
   }
 
