@@ -3,7 +3,7 @@
 m4_define([v_maj], [5])
 m4_define([v_min], [3])
 m4_define([v_mic], [1])
-m4_define([v_rev], [dcr])
+m4_define([v_rev], [x64])
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 m4_ifdef([v_rev], [m4_define([v_ver], [v_maj.v_min.v_mic-v_rev])], [m4_define([v_ver], [v_maj.v_min.v_mic])])
 m4_define([lt_rev], m4_eval(v_maj + v_min))
@@ -12,7 +12,7 @@ m4_define([lt_age], v_min)
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 
-AC_INIT([sgminer], [v_ver], [veox@wemakethings.net], [sgminer], [https://github.com/sgminer-dev/sgminer])
+AC_INIT([sgminer], [v_ver], [veox@wemakethings.net], [sgminer], [https://github.com/tpruvot/sgminer])
 
 AC_PREREQ(2.59)
 AC_CANONICAL_SYSTEM
@@ -73,79 +73,65 @@ RT_LIBS="-lrt"
 
 case $target in
   amd64-*)
-    have_x86_64=true
+    have_x86_64="true"
     ;;
   x86_64-*)
-    have_x86_64=true
+    have_x86_64="true"
     ;;
   *)
-    have_x86_64=false
+    have_x86_64="false"
     ;;
 esac
 
 case $target in
   *-*-linux-gnu*)
-    have_linux=true
+    have_linux="true"
     ;;
   *-*-mingw*)
-    have_win32=true
+    have_win32="true"
     PTHREAD_FLAGS=""
     DLOPEN_FLAGS=""
     WS2_LIBS="-lws2_32"
     MM_LIBS="-lwinmm"
     RT_LIBS=""
-    AC_DEFINE([_WIN32_WINNT], [0x0501], "WinNT version for XP+ support")
+    # AC_DEFINE([_WIN32_WINNT], [0x0501], "WinNT version for XP+ support")
     ;;
   powerpc-*-darwin*)
-    have_darwin=true
+    have_darwin="true"
     CFLAGS="$CFLAGS -faltivec"
     OPENCL_LIBS=""
     PTHREAD_FLAGS=""
     RT_LIBS=""
     ;;
   *-*-darwin*)
-    have_darwin=true
+    have_darwin="true"
     OPENCL_LIBS="-framework OpenCL"
     PTHREAD_FLAGS=""
     RT_LIBS=""
-	;;
+    ;;
 esac
 
-nvml="yes"
-
-AC_ARG_ENABLE([nvml],
-	[AC_HELP_STRING([--disable-nvml],[Build with no NVML GPU monitoring (default enabled)])],
-	[nvml=$enableval]
-	)
-if test "x$nvml" = xyes; then
-	nvml="$opencl"
-	if test "x$opencl" = xyes; then
-		AC_DEFINE([HAVE_NVML], [1], [Defined if the NVML header was found])
-	fi
-fi
-
-
-if test "x$have_win32" != xtrue; then
-	if test "x$have_x86_64" = xtrue; then
+if test "$have_win32" != "true"; then
+	if test "$have_x86_64" = "true"; then
 		ARCH_DIR=x86_64
 	else
 		ARCH_DIR=x86
 	fi
 
-	if test "x$ATISTREAMSDKROOT" != x; then
+	if test "$ATISTREAMSDKROOT" != ""; then
 		OPENCL_FLAGS="-I$ATISTREAMSDKROOT/include $OPENCL_FLAGS"
 		OPENCL_LIBS="-L$ATISTREAMSDKROOT/lib/$ARCH_DIR $OPENCL_LIBS"
 	fi
 
-	if test "x$AMDAPPSDKROOT" != x; then
+	if test "$AMDAPPSDKROOT" != ""; then
 		OPENCL_FLAGS="-I$AMDAPPSDKROOT/include $OPENCL_FLAGS"
 		OPENCL_LIBS="-L$AMDAPPSDKROOT/lib/$ARCH_DIR $OPENCL_LIBS"
 	fi
 fi
 
-have_sgminer_sdk=false
+have_sgminer_sdk="false"
 if test -n "$SGMINER_SDK"; then
-	have_sgminer_sdk=true
+	have_sgminer_sdk="true"
 	CPPFLAGS="-I$SGMINER_SDK/include $CPPFLAGS"
 	LDFLAGS="-L$SGMINER_SDK/lib/$target $LDFLAGS"
 fi
@@ -175,13 +161,13 @@ LIBS=$SAVED_LIBS
 CFLAGS=$SAVED_CFLAGS
 
 has_winpthread=false
-if test "x$have_win32" = xtrue; then
+if test "$have_win32" = "true"; then
         has_winpthread=true
         AC_CHECK_LIB(winpthread, nanosleep, , has_winpthread=false)
         PTHREAD_LIBS=-lwinpthread
 fi
 
-if test "x$has_winpthread" != xtrue; then
+if test "$has_winpthread" != "true"; then
         AC_CHECK_LIB(pthread, pthread_create, ,
                 AC_MSG_ERROR([Could not find pthread library - please install libpthread]))
         PTHREAD_LIBS=-lpthread
@@ -189,35 +175,34 @@ fi
 
 AC_ARG_ENABLE([adl],
 	[AC_HELP_STRING([--disable-adl],[Override detection and disable building with ADL])],
-	[adl=$enableval]
+	[adl="$enableval"]
 	)
 
 AC_ARG_ENABLE([adl_checks],
 	[AC_HELP_STRING([--disable-adl-checks],[Override detection and assume ADL is available])],
-	[adl_checks=$enableval]
+	[adl_checks="$enableval"]
 	)
 
-if test "$found_opencl" = 1; then
-	if test "x$adl" != xno; then
+if test "$found_opencl" = "1"; then
+	if test "$adl" != "no"; then
 		dnl FIXME: force ADL usage if disable-checks specified
-		if test "x$adl_checks" = xno; then
-			have_adl=true
+		if test "$adl_checks" = "no"; then
+			have_adl="true"
 			ADL_CPPFLAGS=-I$srcdir
 		fi
 
 		dnl Check if include files are in $srcdir/ADL_SDK
-		if test "x$have_adl" != xtrue; then
+		if test "$have_adl" != "true"; then
 			ADL_CPPFLAGS=
-			AC_CHECK_FILE([$srcdir/ADL_SDK/adl_sdk.h], [have_adl=true; ADL_CPPFLAGS=-I$srcdir], have_adl=false,)
+			AC_CHECK_FILE([$srcdir/ADL_SDK/adl_sdk.h], [have_adl="true"; ADL_CPPFLAGS=-I$srcdir], have_adl="false",)
 		fi
 
 		dnl FIXME: Check if SGMINER_SDK present
-		if test x$have_adl+$have_sgminer_sdk = xfalse+true; then
-			AC_CHECK_FILE([$SGMINER_SDK/include/ADL_SDK/adl_sdk.h], [have_adl=true; ADL_CPPFLAGS=-I$SGMINER_SDK/include], have_adl=false,)
+		if test "$have_adl $have_sgminer_sdk" = "false true"; then
+			AC_CHECK_FILE([$SGMINER_SDK/include/ADL_SDK/adl_sdk.h], [have_adl="true"; ADL_CPPFLAGS=-I$SGMINER_SDK/include], have_adl="false",)
 		fi
 
-		if test "x$have_adl" = xtrue
-		then
+		if test "$have_adl" = "true"; then
 			AC_DEFINE([HAVE_ADL], [1], [Defined if ADL headers were found])
 		else
 			DLOPEN_FLAGS=""
@@ -227,53 +212,62 @@ else
 	DLOPEN_FLAGS=""
 fi
 
+AC_ARG_ENABLE([nvml],
+	[AC_HELP_STRING([--disable-nvml],[Build without NVML GPU monitoring (default enabled)])],
+	[want_nvml="$enableval"], [want_nvml="yes"])
+if test "$have_x86_64" = "false"; then
+	want_nvml="no"
+fi
+if test "$want_nvml" = "yes"; then
+	AC_DEFINE([HAVE_NVML], [1], [Defined if available, x64 only])
+fi
+
 AC_ARG_ENABLE([git-version],
 	AS_HELP_STRING([--disable-git-version],
 		[Disable use of git version in version string even if available]),
-		[wantgitver=$enableval], [wantgitver=yes])
+		[wantgitver="$enableval"], [wantgitver="yes"])
 
 AC_ARG_WITH([build_number],
 	[AC_HELP_STRING([--with-build-number], [Specify a build number.])],
 	[BUILD_NUMBER="$withval"]
 	)
 AC_SUBST([BUILD_NUMBER])
-AM_CONDITIONAL([USE_BUILD_NUMBER], [test x$BUILD_NUMBER != x])
+AM_CONDITIONAL([USE_BUILD_NUMBER], [test "$BUILD_NUMBER" != ""])
 
 curses="auto"
-
 AC_ARG_WITH([curses],
 	[AC_HELP_STRING([--without-curses],[Compile support for curses TUI (default enabled)])],
-	[curses=$withval]
+	[curses="$withval"]
 	)
-if test "x$curses" = "xno"; then
+if test "$curses" = "no"; then
 	cursesmsg='User specified --without-curses. TUI support DISABLED'
 else
 	AC_SEARCH_LIBS(addstr, ncurses pdcurses, [
-		curses=yes
+		curses="yes"
 		cursesmsg="FOUND: ${ac_cv_search_addstr}"
 		AC_DEFINE([HAVE_CURSES], [1], [Defined to 1 if curses TUI support is wanted])
 	], [
-		if test "x$curses" = "xyes"; then
+		if test "$curses" = "yes"; then
 			AC_MSG_ERROR([Could not find curses library - please install libncurses-dev or pdcurses-dev (or configure --without-curses)])
 		else
 			AC_MSG_WARN([Could not find curses library - if you want a TUI, install libncurses-dev or pdcurses-dev])
-			curses=no
+			curses="no"
 			cursesmsg='NOT FOUND. TUI support DISABLED'
 		fi
 	])
 fi
 
-AM_CONDITIONAL([HAVE_CURSES], [test x$curses = xyes])
-AM_CONDITIONAL([HAVE_WINDOWS], [test x$have_win32 = xtrue])
-AM_CONDITIONAL([HAVE_x86_64], [test x$have_x86_64 = xtrue])
+AM_CONDITIONAL([HAVE_CURSES], [test "$curses" = "yes"])
+AM_CONDITIONAL([HAVE_WINDOWS], [test "$have_win32" = "true"])
+AM_CONDITIONAL([HAVE_x86_64], [test "$have_x86_64" = "true"])
 
 AC_CONFIG_SUBDIRS([submodules/jansson])
 JANSSON_LIBS="submodules/jansson/src/.libs/libjansson.a"
 
 PKG_PROG_PKG_CONFIG()
 
-if test "x$have_sgminer_sdk" = "xtrue"; then
-	if test "x$have_x86_64" = xtrue; then
+if test "$have_sgminer_sdk" = "true"; then
+	if test "$have_x86_64" = "true"; then
 		ARCH_DIR=x86_64
 	else
 		ARCH_DIR=x86
@@ -285,11 +279,11 @@ fi
 
 AC_ARG_ENABLE([libcurl],
 	[AC_HELP_STRING([--disable-libcurl],[Disable building with libcurl for getwork and GBT support])],
-	[libcurl=$enableval]
+	[libcurl="$enableval"]
 	)
 
-if test "x$libcurl" != xno; then
-	if test "x$have_win32" != xtrue; then
+if test "$libcurl" != "no"; then
+	if test "$have_win32" != "true"; then
 		PKG_CHECK_MODULES([LIBCURL], [libcurl >= 7.25.0], [AC_DEFINE([CURL_HAS_KEEPALIVE], [1], [Defined if version of curl supports keepalive.])],
 			[PKG_CHECK_MODULES([LIBCURL], [libcurl >= 7.18.2], ,[AC_MSG_ERROR([Missing required libcurl dev >= 7.18.2])])])
 	else
@@ -305,21 +299,21 @@ AC_SUBST(LIBCURL_CFLAGS)
 
 # Enable or disable use of git version in version string
 AC_MSG_CHECKING(whether to use git version if available)
-if test "x$wantgitver" = "xyes" ; then
+if test "$wantgitver" = "yes" ; then
 	AC_CHECK_PROGS([GIT], [git])
-	AC_CHECK_FILE([.git/], hasgitdir=yes)
+	AC_CHECK_FILE([.git/], hasgitdir="yes")
 	usegitver=$ac_cv_file__git_
-	if test $GIT -a "x$hasgitdir" = "xyes"; then
+	if test $GIT -a "$hasgitdir" = "yes"; then
 		AC_DEFINE([USE_GIT_VERSION], [1], [Use GIT version in version string])
 	fi
 else
 	AC_MSG_RESULT([no, disabled by configure])
-	usegitver=no
+	usegitver="no"
 fi
-AM_CONDITIONAL(USE_GIT_VERSION, [test x$usegitver = xyes])
+AM_CONDITIONAL(USE_GIT_VERSION, [test "$usegitver" = "yes"])
 
 #check execv signature
-if test "x$have_linux" == xtrue; then
+if test "$have_linux" == "true"; then
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([
            #include <unistd.h>
            int execv(const char*, char *const*);
@@ -367,7 +361,7 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([static int __attribute__((warn_unused_result)
 			  AC_DEFINE([HAVE_WARN_UNUSED_RESULT], [1],
                                     [Define if __attribute__((warn_unused_result))]))
 
-if test "x$prefix" = xNONE; then
+if test "$prefix" = "NONE"; then
 	prefix=/usr/local
 fi
 
@@ -410,7 +404,7 @@ echo
 
 echo "  Use git version......: $usegitver"
 
-if test "x$libcurl" != xno; then
+if test "$libcurl" != "no"; then
 	echo "  libcurl(GBT+getwork).: Enabled: $LIBCURL_LIBS"
 else
 	echo "  libcurl(GBT+getwork).: Disabled"
@@ -419,15 +413,16 @@ fi
 echo "  curses.TUI...........: $cursesmsg"
 
 if test $found_opencl = 1; then
+	opencl="yes"
 	echo "  OpenCL...............: FOUND. GPU mining support enabled"
 else
 	echo "  OpenCL...............: NOT FOUND. GPU mining support DISABLED"
 	AC_MSG_ERROR([OpenCL not found])
 fi
 
-if test "x$adl" != xno; then
-	if test x$have_adl = xtrue; then
-		if test "x$adl_checks" = xno; then
+if test "$adl" != "no"; then
+	if test "$have_adl" = "true"; then
+		if test "$adl_checks" = "no"; then
 			echo "  ADL..................: SDK use FORCED"
 		else
 			echo "  ADL..................: SDK found, GPU monitoring support enabled"
@@ -439,12 +434,10 @@ else
 	echo "  ADL..................: Detection overrided. GPU monitoring support DISABLED"
 fi
 
-if test "x$nvml" = xyes; then
-	echo "    NVML monitoring....: Enabled"
-elif test "x$opencl" = xyes; then
-	echo "    NVML monitoring....: Disabled"
+if test "$want_nvml" = "yes"; then
+	echo "  NVML monitoring......: Enabled"
 else
-	echo "    NVML monitoring....: n/a"
+	echo "  NVML monitoring......: Disabled"
 fi
 
 echo

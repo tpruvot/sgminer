@@ -3,11 +3,6 @@
 
 #include "config.h"
 
-#if defined(USE_GIT_VERSION) && defined(GIT_VERSION)
-#undef VERSION
-#define VERSION GIT_VERSION
-#endif
-
 #ifdef BUILD_NUMBER
 #define CGMINER_VERSION VERSION "-" BUILD_NUMBER
 #else
@@ -591,12 +586,10 @@ struct cgpu_info {
   float temp;
   int cutofftemp;
 
-#ifdef HAVE_NVML
   bool has_nvml;
-#endif
+  bool has_adl;
 
 #ifdef HAVE_ADL
-  bool has_adl;
   struct gpu_adl adl;
 
   int gpu_engine;
