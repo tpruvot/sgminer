@@ -71,6 +71,12 @@ char *curly = ":D";
   #include <sys/wait.h>
 #endif
 
+#ifndef max
+# define max(a, b)  ((a) > (b) ? (a) : (b))
+#endif
+#ifndef min
+# define min(a, b)  ((a) < (b) ? (a) : (b))
+#endif
 
 static char packagename[256];
 
