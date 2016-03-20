@@ -71,13 +71,6 @@ char *curly = ":D";
   #include <sys/wait.h>
 #endif
 
-#ifndef max
-# define max(a, b)  ((a) > (b) ? (a) : (b))
-#endif
-#ifndef min
-# define min(a, b)  ((a) < (b) ? (a) : (b))
-#endif
-
 static char packagename[256];
 
 static bool startup = true; //sgminer is starting up
@@ -6148,8 +6141,8 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
   cg_wlock(&pool->data_lock);
 
   if (pool->algorithm.type == ALGO_DECRED) {
-    //pool->merkle_offset = 4 + 32;
     pool->swork.cb_len = 32;
+    work->nonce2 = pool->nonce2++;
   } else {
     /* Update coinbase. Always use an LE encoded nonce2 to fill in values
     * from left to right and prevent overflow errors with small n2sizes */
@@ -6208,8 +6201,9 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
 	data[0] = le32dec(pool->header_bin);
 	flip32(&data[1], pool->header_bin + 4); // prevhash
     memcpy(&data[9], pool->coinbase, headersize);
-    memcpy(&data[36], pool->nonce1bin, min(pool->n1_len,36));
+    memcpy(&data[36], pool->nonce1bin, MIN(pool->n1_len,36));
     // random data + thr_id in 37, data[38] stratum id should be kept from extranonce subscribe
+    data[36] = work->nonce2;
     data[37] = ((rand() * 4) << 8) | work->thr_id;
     //applog_hex(work->data, 180);
   }
