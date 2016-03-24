@@ -110,6 +110,8 @@ int opt_dynamic_interval = 7;
 int opt_g_threads = -1;
 bool opt_restart = true;
 
+int opt_vote = 0;
+
 /*****************************************
  * Xn Algorithm options
  *****************************************/
@@ -1823,6 +1825,9 @@ struct opt_table opt_config_table[] = {
   OPT_WITHOUT_ARG("--verbose|-v",
       opt_set_bool, &opt_verbose,
       "Log verbose output to stderr as well as status output"),
+  OPT_WITH_ARG("--vote",
+      set_int_1_to_65535, opt_show_intval, &opt_vote,
+      "Optional vote value for decred blocks"),
   OPT_WITH_ARG("--watchpool-refresh",
       set_int_1_to_65535, opt_show_intval, &opt_watchpool_refresh,
       "Interval in seconds to refresh pool status"),
@@ -2322,6 +2327,8 @@ static bool getwork_decode(json_t *res_val, struct work *work)
   }
 
   if (work->pool->algorithm.type == ALGO_DECRED) {
+    uint16_t vote = (uint16_t) (opt_vote << 1) | 1;
+    memcpy(&work->data[100], &vote, 2);
     // some random extradata to make it unique
     ((uint32_t*)work->data)[36] = (rand()*4);
     ((uint32_t*)work->data)[37] = ((rand()*4) << 8) | work->thr_id;
@@ -5618,8 +5625,8 @@ static void *stratum_sthread(void *userdata)
 
   while (42) {
     char s[1024] = { 0 };
-    char noncehex[16], nonce2hex[128];
-    unsigned char nonce2[64] = { 0 };
+    char noncehex[16], nonce2hex[80];
+    char votehex[16] = { 0 };
     struct stratum_share *sshare;
     uint32_t *hash32, *data, nonce;
     struct work *work;
@@ -5662,9 +5669,11 @@ static void *stratum_sthread(void *userdata)
     if (pool->algorithm.type == ALGO_DECRED) {
       nonce = be32dec(work->data + 140); // data[35];
       __bin2hex(nonce2hex, work->data + 144, pool->n1_len);
+      if (opt_vote) sprintf(votehex, ", \"%04x\"", (opt_vote << 1) | 1);
     } else {
-      *((uint64_t *)nonce2) = htole64(work->nonce2);
-      __bin2hex(nonce2hex, nonce2, work->nonce2_len);
+      uint64_t nonce2[2] = { 0 };
+      *(nonce2) = htole64(work->nonce2);
+      __bin2hex(nonce2hex, (unsigned char*) nonce2, work->nonce2_len);
     }
 
     __bin2hex(noncehex, (const unsigned char *)&nonce, 4);
@@ -5677,8 +5686,8 @@ static void *stratum_sthread(void *userdata)
     mutex_unlock(&sshare_lock);
 
     snprintf(s, sizeof(s),
-      "{\"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"], \"id\": %d, \"method\": \"mining.submit\"}",
-      pool->rpc_user, work->job_id, nonce2hex, work->ntime, noncehex, sshare->id);
+      "{\"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"%s], \"id\": %d, \"method\": \"mining.submit\"}",
+      pool->rpc_user, work->job_id, nonce2hex, work->ntime, noncehex, votehex, sshare->id);
 
     applog(LOG_INFO, "Submitting share %08lx to %s", (long unsigned int)htole32(hash32[6]), get_pool_name(pool));
 
@@ -6198,9 +6207,11 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
   else if (pool->algorithm.type == ALGO_DECRED) {
     uint32_t* data = (uint32_t*) work->data;
     int headersize = 108;
+    uint16_t vote = (uint16_t) (opt_vote << 1) | 1;
     data[0] = le32dec(pool->header_bin);
     flip32(&data[1], pool->header_bin + 4); // prevhash
     memcpy(&data[9], pool->coinbase, headersize);
+    memcpy(&data[25], &vote, 2);
     memcpy(&data[36], pool->nonce1bin, MIN(pool->n1_len,36));
     // random data + thr_id in 37, data[38] stratum id should be kept from extranonce subscribe
     data[36] = work->nonce2;
