@@ -2113,12 +2113,12 @@ static double get_work_blockdiff(const struct work *work)
     shift = work->data[116+3];
     powdiff = (8 * (0x1d - 3)) - (8 * (shift - 3));;
     diff64 = data[29] & 0xFFFFFF;
-	if (!diff64) diff64 = 1;
-	double d = (double)work->pool->algorithm.diff_numerator / (double)diff64;
-	for (int m=shift; m < 29; m++) d *= 256.0;
-	for (int m=29; m < shift; m++) d /= 256.0;
-	if (shift == 28) d *= 256.0; // testnet
-	applog(LOG_INFO, "Network difficulty %.3f", d);
+    if (!diff64) diff64 = 1;
+    double d = (double)work->pool->algorithm.diff_numerator / (double)diff64;
+    for (int m=shift; m < 29; m++) d *= 256.0;
+    for (int m=29; m < shift; m++) d /= 256.0;
+    if (shift == 28) d *= 256.0; // testnet
+    applog(LOG_INFO, "Network difficulty %.3f", d);
     return d;
   }
   else {
@@ -2324,7 +2324,7 @@ static bool getwork_decode(json_t *res_val, struct work *work)
   if (work->pool->algorithm.type == ALGO_DECRED) {
     // some random extradata to make it unique
     ((uint32_t*)work->data)[36] = (rand()*4);
-    ((uint32_t*)work->data)[37] = (rand()*4) << 8;
+    ((uint32_t*)work->data)[37] = ((rand()*4) << 8) | work->thr_id;
   }
   return true;
 }
@@ -3954,7 +3954,7 @@ static void _copy_work(struct work *work, const struct work *base_work, int noff
       uint32_t work_ntime = _get_work_time(work);
       uint32_t ntime = be32toh(work_ntime);
       ntime += noffset;
-	  _set_work_time(work, htobe32(ntime));
+      _set_work_time(work, htobe32(ntime));
       work->ntime = offset_ntime(base_work->ntime, noffset);
     } else
       work->ntime = strdup(base_work->ntime);
@@ -6198,8 +6198,8 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
   else if (pool->algorithm.type == ALGO_DECRED) {
     uint32_t* data = (uint32_t*) work->data;
     int headersize = 108;
-	data[0] = le32dec(pool->header_bin);
-	flip32(&data[1], pool->header_bin + 4); // prevhash
+    data[0] = le32dec(pool->header_bin);
+    flip32(&data[1], pool->header_bin + 4); // prevhash
     memcpy(&data[9], pool->coinbase, headersize);
     memcpy(&data[36], pool->nonce1bin, MIN(pool->n1_len,36));
     // random data + thr_id in 37, data[38] stratum id should be kept from extranonce subscribe

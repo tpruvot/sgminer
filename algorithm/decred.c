@@ -42,15 +42,11 @@ void precalc_hash_decred(dev_blk_ctx *blk, uint32_t *state, uint32_t *pdata)
 	sph_blake256_context ctx_blake;
 	char *cdata = (char*)pdata;
 
-	if (cdata[0])
-		memcpy(data, pdata, 180);
-	else
-		be32enc_vect(data, pdata, 45);
+	//memcpy(data, pdata, 180);
 
-	//applog_hex(data, 16);
 	sph_blake256_set_rounds(14);
 	sph_blake256_init(&ctx_blake);
-	sph_blake256(&ctx_blake, data, 128);
+	sph_blake256(&ctx_blake, pdata, 128);
 
 	blk->ctx_a = ctx_blake.H[0];
 	blk->ctx_b = ctx_blake.H[1];
@@ -83,21 +79,11 @@ void decred_regenhash(struct work *work)
 	uint32_t *nonce = (uint32_t *)(work->data + 140);
 	uint32_t *ohash = (uint32_t *)(work->hash);
 
-	if (work->data[0])
-		memcpy(data, work->data, 180);
-	else
-		be32enc_vect(data, (const uint32_t *)work->data, 45);
+	memcpy(data, work->data, 180);
 	data[35] = swab32(data[35]);
 	if (!data[37]) applog(LOG_WARNING, "work has empty extradata!");
 	decredhash(ohash, data);
-	//applog_hex(&ohash[6], 8);
 	*nonce = data[35];
-	if (ohash[7]) {
-		data[35] = swab32(data[35]);
-		decredhash(ohash, data);
-		applog_hex(&ohash[6], 8);
-		*nonce = data[35];
-	}
 }
 
 bool scanhash_decred(struct thr_info *thr, const unsigned char __maybe_unused *pmidstate,
