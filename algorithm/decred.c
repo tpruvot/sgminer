@@ -81,7 +81,8 @@ void decred_regenhash(struct work *work)
 
 	memcpy(data, work->data, 180);
 	data[35] = swab32(data[35]);
-	if (!data[37]) applog(LOG_WARNING, "work has empty extradata!");
+	if (work->stratum && !data[37])
+		applog(LOG_WARNING, "work has empty extradata!");
 	decredhash(ohash, data);
 	*nonce = data[35];
 }
