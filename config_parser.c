@@ -2193,9 +2193,8 @@ void api_pool_profile(struct io_data *io_data, __maybe_unused SOCKETTYPE c, char
 
 void update_config_intensity(struct profile *profile)
 {
+  char buf[256] = { 0 };
   int i;
-  char buf[255];
-  memset(buf, 0, 255);
 
   for (i = 0; i<nDevs; ++i) {
     if (gpus[i].dynamic) {
@@ -2206,7 +2205,7 @@ void update_config_intensity(struct profile *profile)
     }
   }
 
-  if (profile->intensity) {
+  if (profile->intensity && profile->intensity != default_profile.intensity) {
     free(profile->intensity);
   }
 
