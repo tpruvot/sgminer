@@ -2901,7 +2901,7 @@ bool cg_completion_timeout(void *fn, void *fnarg, int timeout)
 
   pthread_create(&pthread, NULL, completion_thread, (void *)cgc);
 
-  ret = cgsem_mswait(&cgc->cgsem, timeout);
+  ret = cgsem_mswait(&cgc->cgsem, timeout) != 0;
 
   if (ret)
     pthread_cancel(pthread);

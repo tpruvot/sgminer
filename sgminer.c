@@ -8763,7 +8763,6 @@ int main(int argc, char *argv[])
   struct thr_info *thr;
   struct block *block;
   int i;
-  char *s;
 
   /* This dangerous function tramples random dynamically allocated
    * variables so do it before anything at all */
@@ -8845,7 +8844,7 @@ int main(int argc, char *argv[])
   /* sgminer_path is current dir */
   sgminer_path = (char *)alloca(PATH_MAX);
 #ifndef _MSC_VER
-  s = strdup(argv[0]);
+  char *s = strdup(argv[0]);
   strcpy(sgminer_path, dirname(s));
   free(s);
 #else

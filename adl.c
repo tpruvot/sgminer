@@ -326,8 +326,6 @@ void init_adl(int nDevs)
   bool devs_match = true;
   ADLBiosInfo BiosInfo;
 
-  applog(LOG_INFO, "Number of ADL devices: %d", nDevs);
-
   if (unlikely(pthread_mutex_init(&adl_lock, NULL))) {
     applog(LOG_ERR, "Failed to init adl_lock in init_adl");
     return;
@@ -352,7 +350,7 @@ void init_adl(int nDevs)
     result = ADL_Adapter_AdapterInfo_Get (lpInfo, sizeof (AdapterInfo) * iNumberAdapters);
     if (result != ADL_OK) {
       applog(LOG_INFO, "ADL_Adapter_AdapterInfo_Get Error! Error %d", result);
-      return ;
+      return;
     }
   } else {
     applog(LOG_INFO, "No adapters found");
@@ -372,13 +370,13 @@ void init_adl(int nDevs)
     result = ADL_Adapter_ID_Get(iAdapterIndex, &lpAdapterID);
 
     if (ADL_Adapter_VideoBiosInfo_Get(iAdapterIndex, &BiosInfo) == ADL_ERR) {
-      applog(LOG_INFO, "ADL index %d, id %d - FAILED to get BIOS info", iAdapterIndex, lpAdapterID);
+      applog(LOG_DEBUG, "ADL index %d, id %d - FAILED to get BIOS info", iAdapterIndex, lpAdapterID);
     } else {
-      applog(LOG_INFO, "ADL index %d, id %d - BIOS partno.: %s, version: %s, date: %s", iAdapterIndex, lpAdapterID, BiosInfo.strPartNumber, BiosInfo.strVersion, BiosInfo.strDate);
+      applog(LOG_DEBUG, "ADL index %d, id %d - BIOS partno.: %s, version: %s, date: %s", iAdapterIndex, lpAdapterID, BiosInfo.strPartNumber, BiosInfo.strVersion, BiosInfo.strDate);
     }
 
     if (result != ADL_OK) {
-      applog(LOG_INFO, "Failed to ADL_Adapter_ID_Get. Error %d", result);
+      applog(LOG_DEBUG, "Failed to ADL_Adapter_ID_Get. Error %d", result);
       if (result == -10)
         applog(LOG_INFO, "(Device is not enabled.)");
       continue;

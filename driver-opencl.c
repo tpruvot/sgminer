@@ -686,7 +686,16 @@ void print_ndevs(int *ndevs)
 {
   opt_verbose = true;
   opencl_drv.drv_detect();
-  clear_adl(*ndevs);
+#if HAVE_NVML
+  if(!opt_nonvml) {
+    nvml_init();
+    nvml_print_devices();
+    nvml_shutdown();
+  }
+#endif
+  if(!opt_noadl) {
+    clear_adl(*ndevs);
+  }
   applog(LOG_INFO, "%i GPU devices max detected", *ndevs);
 }
 

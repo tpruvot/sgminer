@@ -138,8 +138,7 @@ void nvml_print_devices() {
         return;
     }
 
-    applog(LOG_INFO, "NVML found %u device%s%s", \
-      devnum, devnum != 1 ? "s" : "", devnum ? ":" : "");
+    applog(LOG_INFO, "Number of NVML devices: %d", devnum);
     if(!devnum) return;
 
     for(dev = 0; dev < devnum; dev++) {
@@ -168,7 +167,7 @@ void nvml_print_devices() {
             return;
         }
 
-        applog(LOG_INFO, "GPU %u: %s [%s]\n", dev, name, pci.busId);
+        applog(LOG_INFO, "GPU %u: %s [%s]", dev, name, pci.busId);
     }
 }
 
