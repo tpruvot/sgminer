@@ -6180,6 +6180,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
   }
 
   applog(LOG_DEBUG, "[THR%d] gen_stratum_work() - algorithm = %s", work->thr_id, pool->algorithm.name);
+  work->midstate_done = false;
 
   // Different for Neoscrypt because of Little Endian
   if (pool->algorithm.type == ALGO_NEOSCRYPT) {
@@ -7481,7 +7482,7 @@ void *miner_thread(void *userdata)
   struct device_drv *drv = cgpu->drv;
   char threadname[16];
 
-        snprintf(threadname, sizeof(threadname), "%d/Miner", thr_id);
+  snprintf(threadname, sizeof(threadname), "%d/Miner", thr_id);
   RenameThread(threadname);
 
   thread_reportout(mythr);

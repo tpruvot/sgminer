@@ -1394,7 +1394,10 @@ static bool opencl_thread_init(struct thr_info *thr)
 static bool opencl_prepare_work(struct thr_info __maybe_unused *thr, struct work *work)
 {
   work->blk.work = work;
-  if (work->pool->algorithm.precalc_hash) work->pool->algorithm.precalc_hash(&work->blk, 0, (uint32_t *)(work->data));
+  if (work->pool->algorithm.precalc_hash && !work->midstate_done) {
+    work->pool->algorithm.precalc_hash(&work->blk, (uint32_t *)(work->midstate), (uint32_t *)(work->data));
+    work->midstate_done = true;
+  }
   thr->pool_no = work->pool->pool_no;
   return true;
 }
@@ -1517,13 +1520,14 @@ static void opencl_thread_shutdown(struct thr_info *thr)
   if (clState) {
     clFinish(clState->commandQueue);
     clReleaseMemObject(clState->outputBuffer);
-    clReleaseMemObject(clState->CLbuffer0);
-	if (clState->buffer1)
-	clReleaseMemObject(clState->buffer1);
-	if (clState->buffer2)
-	clReleaseMemObject(clState->buffer2);
-	if (clState->buffer3)
-	clReleaseMemObject(clState->buffer3);
+    if (clState->CLbuffer0)
+      clReleaseMemObject(clState->CLbuffer0);
+    if (clState->buffer1)
+      clReleaseMemObject(clState->buffer1);
+    if (clState->buffer2)
+      clReleaseMemObject(clState->buffer2);
+    if (clState->buffer3)
+      clReleaseMemObject(clState->buffer3);
     if (clState->padbuffer8)
       clReleaseMemObject(clState->padbuffer8);
     clReleaseKernel(clState->kernel);

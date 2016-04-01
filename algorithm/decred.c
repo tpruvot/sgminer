@@ -36,17 +36,19 @@ inline void decredhash(void *state, const void *input)
 	//applog_hex((void*)input, 16);
 }
 
-void precalc_hash_decred(dev_blk_ctx *blk, uint32_t *state, uint32_t *pdata)
+void precalc_hash_decred(dev_blk_ctx *blk, uint32_t *midstate, uint32_t *pdata)
 {
 	uint32_t data[48];
 	sph_blake256_context ctx_blake;
-	char *cdata = (char*)pdata;
 
 	//memcpy(data, pdata, 180);
 
 	sph_blake256_set_rounds(14);
 	sph_blake256_init(&ctx_blake);
 	sph_blake256(&ctx_blake, pdata, 128);
+
+	if (midstate) memcpy(midstate, ctx_blake.H, 32);
+	//applog(LOG_NOTICE, "midstate %08x", ctx_blake.H[0]);
 
 	blk->ctx_a = ctx_blake.H[0];
 	blk->ctx_b = ctx_blake.H[1];
@@ -110,7 +112,7 @@ bool scanhash_decred(struct thr_info *thr, const unsigned char __maybe_unused *p
 		data[35] = (n);
 		decredhash(ostate, data);
 
-		applog(LOG_DEBUG, "data6 %08x data7 %08x", data[6], data[7]);
+		applog(LOG_NOTICE, "data6 %08x data7 %08x", data[6], data[7]);
 
 		if (unlikely(ostate[6] <= Htarg) && !ostate[7]) {
 			((uint32_t *)pdata)[35] = htobe32(n);

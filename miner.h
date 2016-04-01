@@ -1492,6 +1492,7 @@ struct work {
   bool    stale;
   bool    mandatory;
   bool    block;
+  bool    midstate_done;
 
   bool    stratum;
   char    *job_id;
