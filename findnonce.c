@@ -214,7 +214,6 @@ static void *postcalc_hash(void *userdata)
 
 void postcalc_hash_async(struct thr_info *thr, struct work *work, uint32_t *res)
 {
-	
   struct pc_data *pcd = (struct pc_data *)malloc(sizeof(struct pc_data));
   int buffersize;
 
@@ -226,7 +225,7 @@ void postcalc_hash_async(struct thr_info *thr, struct work *work, uint32_t *res)
   pcd->thr = thr;
   pcd->work = copy_work(work);
   buffersize = BUFFERSIZE;
-   memcpy(&pcd->res, res, buffersize);
+  memcpy(&pcd->res, res, buffersize);
 
   if (pthread_create(&pcd->pth, NULL, postcalc_hash, (void *)pcd)) {
     applog(LOG_ERR, "Failed to create postcalc_hash thread");

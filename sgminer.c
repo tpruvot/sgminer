@@ -2327,8 +2327,11 @@ static bool getwork_decode(json_t *res_val, struct work *work)
   }
 
   if (work->pool->algorithm.type == ALGO_DECRED) {
-    uint16_t vote = (uint16_t) (opt_vote << 1) | 1;
-    memcpy(&work->data[100], &vote, 2);
+    uint16_t votebits;
+    memcpy(&votebits, &work->data[100], 2);
+    // never change the last bit!
+    votebits = (uint16_t) (opt_vote << 1) | (votebits & 1);
+    memcpy(&work->data[100], &votebits, 2);
     // some random extradata to make it unique
     ((uint32_t*)work->data)[36] = (rand()*4);
     ((uint32_t*)work->data)[37] = ((rand()*4) << 8) | work->thr_id;
@@ -5667,9 +5670,12 @@ static void *stratum_sthread(void *userdata)
     }
 
     if (pool->algorithm.type == ALGO_DECRED) {
+      uint16_t votebits;
+      memcpy(&votebits, &data[25], 2);
+      votebits = (votebits & 1) | (uint16_t) (opt_vote << 1);
       nonce = be32dec(work->data + 140); // data[35];
       __bin2hex(nonce2hex, work->data + 144, pool->n1_len);
-      if (opt_vote) sprintf(votehex, ", \"%04x\"", (opt_vote << 1) | 1);
+      if (opt_vote) sprintf(votehex, ", \"%04hx\"", votebits);
     } else {
       uint64_t nonce2[2] = { 0 };
       *(nonce2) = htole64(work->nonce2);
@@ -6206,12 +6212,15 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
   }
   else if (pool->algorithm.type == ALGO_DECRED) {
     uint32_t* data = (uint32_t*) work->data;
+    uint16_t votebits;
     int headersize = 108;
-    uint16_t vote = (uint16_t) (opt_vote << 1) | 1;
     data[0] = le32dec(pool->header_bin);
     flip32(&data[1], pool->header_bin + 4); // prevhash
     memcpy(&data[9], pool->coinbase, headersize);
-    memcpy(&data[25], &vote, 2);
+    // last bit should not be changed
+    memcpy(&votebits, &data[25], 2);
+    votebits = (uint16_t) (opt_vote << 1) | (votebits & 1);
+    memcpy(&data[25], &votebits, 2);
     memcpy(&data[36], pool->nonce1bin, MIN(pool->n1_len,36));
     // random data + thr_id in 37, data[38] stratum id should be kept from extranonce subscribe
     data[36] = work->nonce2;

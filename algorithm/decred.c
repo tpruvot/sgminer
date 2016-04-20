@@ -87,6 +87,7 @@ void decred_regenhash(struct work *work)
 	*nonce = data[35];
 }
 
+#if 0
 bool scanhash_decred(struct thr_info *thr, const unsigned char __maybe_unused *pmidstate,
 		     unsigned char *pdata, unsigned char __maybe_unused *phash1,
 		     unsigned char __maybe_unused *phash, const unsigned char *ptarget,
@@ -126,3 +127,4 @@ bool scanhash_decred(struct thr_info *thr, const unsigned char __maybe_unused *p
 
 	return ret;
 }
+#endif
