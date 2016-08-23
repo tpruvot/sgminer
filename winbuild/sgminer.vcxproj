@@ -275,6 +275,9 @@
     <ClCompile Include="..\algorithm\lyra2rev2.c" />
     <ClCompile Include="..\algorithm\neoscrypt.c" />
     <ClCompile Include="..\algorithm\pluck.c" />
+    <ClCompile Include="..\algorithm\sibcoin.c" />
+    <ClCompile Include="..\algorithm\skein2.c" />
+    <ClCompile Include="..\algorithm\veltor.c" />
     <ClCompile Include="..\algorithm\sponge.c" />
     <ClCompile Include="..\algorithm\talkcoin.c" />
     <ClCompile Include="..\algorithm\whirlpoolx.c" />
@@ -328,6 +331,7 @@
     <ClCompile Include="..\sph\shavite.c" />
     <ClCompile Include="..\sph\simd.c" />
     <ClCompile Include="..\sph\skein.c" />
+    <ClCompile Include="..\sph\gost_streebog.c" />
     <ClCompile Include="..\algorithm\twecoin.c" />
     <ClCompile Include="..\sph\whirlpool.c" />
     <ClCompile Include="..\util.c" />

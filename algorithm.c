@@ -40,6 +40,9 @@
 #include "algorithm/blake256.h"
 #include "algorithm/blakecoin.h"
 #include "algorithm/decred.h"
+#include "algorithm/sibcoin.h"
+#include "algorithm/skein2.h"
+#include "algorithm/veltor.h"
 
 #include "compat.h"
 
@@ -73,6 +76,9 @@ const char *algorithm_type_str[] = {
   "Blake",
   "Decred",
   "Vanilla",
+  "Sibcoin",
+  "Skein2",
+  "Veltor",
   NULL
 };
 
@@ -405,6 +411,106 @@ static cl_int queue_darkcoin_mod_kernel(struct __clState *clState, struct _dev_b
   // echo - search10
   num = 0;
   CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->outputBuffer);
+  CL_SET_ARG(le_target);
+
+  return status;
+}
+
+static cl_int queue_sibcoin_kernel(struct __clState *clState, struct _dev_blk_ctx *blk, __maybe_unused cl_uint threads)
+{
+  cl_kernel *kernel;
+  unsigned int num;
+  cl_ulong le_target;
+  cl_int status = 0;
+
+  le_target = *(cl_ulong *)(blk->work->device_target + 24);
+  flip80(clState->cldata, blk->work->data);
+  status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 80, clState->cldata, 0, NULL, NULL);
+
+  // blake - search
+  kernel = &clState->kernel;
+  num = 0;
+  CL_SET_ARG(clState->CLbuffer0);
+  CL_SET_ARG(clState->padbuffer8);
+  // bmw - search1
+  kernel = clState->extra_kernels;
+  CL_SET_ARG_0(clState->padbuffer8);
+  // groestl - search2
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // skein - search3
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // jh - search4
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // keccak - search5
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // gost - search6
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // luffa - search7
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // cubehash - search8
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // shavite - search9
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // simd - search10
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // echo - search11
+  num = 0;
+  CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->outputBuffer);
+  CL_SET_ARG(le_target);
+
+  return status;
+}
+
+static cl_int queue_veltor_kernel(struct __clState *clState, struct _dev_blk_ctx *blk, __maybe_unused cl_uint threads)
+{
+  cl_kernel *kernel;
+  unsigned int num;
+  cl_ulong le_target;
+  cl_int status = 0;
+
+  le_target = *(cl_ulong *)(blk->work->device_target + 24);
+  flip80(clState->cldata, blk->work->data);
+  status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 80, clState->cldata, 0, NULL, NULL);
+  // skein80 search()
+  kernel = &clState->kernel;
+  num = 0;
+  CL_SET_ARG(clState->CLbuffer0);
+  CL_SET_ARG(clState->padbuffer8);
+  // shavite search1()
+  kernel = clState->extra_kernels;
+  CL_SET_ARG_0(clState->padbuffer8);
+  // shabal search2()
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // streebog search3()
+  num = 0;
+  CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->outputBuffer);
+  CL_SET_ARG(le_target);
+
+  return status;
+}
+
+static cl_int queue_skein2_kernel(struct __clState *clState, struct _dev_blk_ctx *blk, __maybe_unused cl_uint threads)
+{
+  cl_kernel *kernel;
+  unsigned int num;
+  cl_ulong le_target;
+  cl_int status = 0;
+
+  le_target = *(cl_ulong *)(blk->work->device_target + 24);
+  flip80(clState->cldata, blk->work->data);
+  status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 80, clState->cldata, 0, NULL, NULL);
+  // skein80 search()
+  kernel = &clState->kernel;
+  num = 0;
+  CL_SET_ARG(clState->CLbuffer0);
+  CL_SET_ARG(clState->padbuffer8);
+  // skein64 search1()
+  kernel = clState->extra_kernels;
+  num = 0;
+  CL_SET_ARG(clState->padbuffer8);
   CL_SET_ARG(clState->outputBuffer);
   CL_SET_ARG(le_target);
 
@@ -1067,6 +1173,12 @@ static algorithm_settings_t algos[] = {
 
   { "darkcoin-mod", ALGO_X11, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 10, 8 * 16 * 4194304, 0, darkcoin_regenhash, NULL, queue_darkcoin_mod_kernel, gen_hash, append_x11_compiler_options },
 
+  { "sibcoin-mod", ALGO_SIBCOIN, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 11, 8 * 16 * 4194304, 0, sibcoin_regenhash, NULL, queue_sibcoin_kernel, gen_hash, append_x11_compiler_options },
+
+  { "skein2", ALGO_SKEIN2, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 8 * 16 * 4194304, 0, skein2_regenhash, NULL, queue_skein2_kernel, gen_hash, append_x11_compiler_options },
+
+  { "veltor", ALGO_VELTOR, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 3, 8 * 16 * 4194304, 0, veltor_regenhash, NULL, queue_veltor_kernel, gen_hash, append_x11_compiler_options },
+
   { "marucoin", ALGO_X13, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 0, 0, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, marucoin_regenhash, NULL, queue_sph_kernel, gen_hash, append_x13_compiler_options },
   { "marucoin-mod", ALGO_X13, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 12, 8 * 16 * 4194304, 0, marucoin_regenhash, NULL, queue_marucoin_mod_kernel, gen_hash, append_x13_compiler_options },
   { "marucoin-modold", ALGO_X13, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 10, 8 * 16 * 4194304, 0, marucoin_regenhash, NULL, queue_marucoin_mod_old_kernel, gen_hash, append_x13_compiler_options },
@@ -1175,6 +1287,11 @@ static const char *lookup_algorithm_alias(const char *lookup_alias, uint8_t *nfa
   ALGO_ALIAS("lyra2v2", "lyra2rev2");
   ALGO_ALIAS("blakecoin", "blake256r8");
   ALGO_ALIAS("blake", "blake256r14");
+  ALGO_ALIAS("sibcoin-mod", "sibcoin");
+  ALGO_ALIAS("sib", "sibcoin");
+  ALGO_ALIAS("doubleskein", "skein2");
+  ALGO_ALIAS("woodcoin", "skein2");
+  ALGO_ALIAS("thorsriddle", "veltor");
 
 #undef ALGO_ALIAS
 #undef ALGO_ALIAS_NF
