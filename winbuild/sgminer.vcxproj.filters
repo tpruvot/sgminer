@@ -233,6 +233,12 @@
     <ClCompile Include="..\algorithm\blakecoin.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>
+    <ClCompile Include="..\algorithm\skein2.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\algorithm\veltor.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompie>
     <ClCompile Include="..\nvml.c">
       <Filter>Source Files</Filter>
     </ClCompile>
