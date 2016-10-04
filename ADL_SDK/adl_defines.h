@@ -1243,10 +1243,23 @@ typedef enum _SLS_ImageCropType {
 }SLS_ImageCropType;
 
 
+typedef enum _DceSettingsType {
+    DceSetting_HdmiLq,
+    DceSetting_DpSettings,
+    DceSetting_Protection
+} DceSettingsType;
+
+typedef enum _DpLinkRate {
+    DPLinkRate_RBR,
+    DPLinkRate_HBR,
+    DPLinkRate_HBR2,
+    DPLinkRate_HBR3
+} DpLinkRate;
+
 // @}
 
 ///\defgroup define_powerxpress_constants PowerXpress Definitions
-// @{
+/// @{
 
 /// The bit mask identifies PX caps for ADLPXConfigCaps.iPXConfigCapMask and ADLPXConfigCaps.iPXConfigCapValue
 #define	ADL_PX_CONFIGCAPS_SPLASHSCREEN_SUPPORT		0x0001
@@ -1279,10 +1292,10 @@ typedef enum PXScheme
 } PXScheme;
 
 
-// @}
+/// @}
 
 ///\defgroup define_appprofiles For Application Profiles
-// @{
+/// @{
 
 #define ADL_APP_PROFILE_FILENAME_LENGTH		64
 #define ADL_APP_PROFILE_TIMESTAMP_LENGTH	32
@@ -1310,18 +1323,18 @@ typedef enum _ADLProfilePropertyType
 }ADLProfilePropertyType;
 
 
-// @}
+/// @}
 
 ///\defgroup define_dp12 For Display Port 1.2
-// @{
+/// @{
 
 /// Maximum Relative Address Link
 #define ADL_MAX_RAD_LINK_COUNT	15
 
-// @}
+/// @}
 
 ///\defgroup defines_gamutspace Driver Supported Gamut Space
-// @{
+/// @{
 
 /// The flags desribes that gamut is related to source or to destination and to overlay or to graphics
 #define ADL_GAMUT_REFERENCE_SOURCE       (1 << 0)
@@ -1330,6 +1343,7 @@ typedef enum _ADLProfilePropertyType
 /// The flags are used to describe the source of gamut and how read information from struct ADLGamutData
 #define ADL_CUSTOM_WHITE_POINT           (1 << 0)
 #define ADL_CUSTOM_GAMUT                 (1 << 1)
+#define ADL_GAMUT_REMAP_ONLY             (1 << 2)
 
 /// The define means the predefined gamut values  .
 ///Driver uses to find entry in the table and apply appropriate gamut space.
@@ -1371,13 +1385,15 @@ typedef enum _ADLProfilePropertyType
 #define ADL_EDID_REGAMMA_PREDEFINED_PQ_2084_INTERIM (1 << 3)
 ///specifies that 3.6 gamma should be applied
 #define ADL_EDID_REGAMMA_PREDEFINED_36         (1 << 6)
-///specifies that previous gama curve should be applied - used after using one of the above predefines
-#define ADL_EDID_REGAMMA_PREDEFINED_RESET      (1 << 7)
+///specifies that BT709 gama should be applied
+#define ADL_EDID_REGAMMA_PREDEFINED_BT709      (1 << 7)
+///specifies that regamma should be disabled, and application controls regamma content (of the whole screen)
+#define ADL_EDID_REGAMMA_PREDEFINED_APPCTRL    (1 << 8)
 
-// @}
+/// @}
 
 /// \defgroup define_ddcinfo_pixelformats DDCInfo Pixel Formats
-// @{
+/// @{
 /// defines for iPanelPixelFormat  in struct ADLDDCInfo2
 #define ADL_DISPLAY_DDCINFO_PIXEL_FORMAT_RGB656                       0x00000001L
 #define ADL_DISPLAY_DDCINFO_PIXEL_FORMAT_RGB666                       0x00000002L
@@ -1394,12 +1410,45 @@ typedef enum _ADLProfilePropertyType
 #define ADL_DISPLAY_DDCINFO_PIXEL_FORMAT_YCBCR422_8BPCC               0x00001000L
 #define ADL_DISPLAY_DDCINFO_PIXEL_FORMAT_YCBCR422_10BPCC              0x00002000L
 #define ADL_DISPLAY_DDCINFO_PIXEL_FORMAT_YCBCR422_12BPCC              0x00004000L
-// @}
+/// @}
 
+/// \defgroup define_source_content_TF ADLSourceContentAttributes transfer functions (gamma)
+/// @{
+/// defines for iTransferFunction in ADLSourceContentAttributes
+#define ADL_TF_sRGB				0x0001      ///< sRGB
+#define ADL_TF_BT709			0x0002      ///< BT.709
+#define ADL_TF_PQ2084			0x0004      ///< PQ2084
+#define ADL_TF_PQ2084_INTERIM	0x0008	    ///< PQ2084-Interim
+#define ADL_TF_LINEAR_0_1		0x0010      ///< Linear 0 - 1
+#define ADL_TF_LINEAR_0_125		0x0020      ///< Linear 0 - 125
+#define ADL_TF_DOLBYVISION		0x0040      ///< DolbyVision
+/// @}
 
+/// \defgroup define_source_content_CS ADLSourceContentAttributes color spaces
+/// @{
+/// defines for iColorSpace in ADLSourceContentAttributes
+#define ADL_CS_sRGB				0x0001      ///< sRGB
+#define ADL_CS_BT601 			0x0002      ///< BT.601
+#define ADL_CS_BT709			0x0004      ///< BT.709
+#define ADL_CS_BT2020			0x0008      ///< BT.2020
+#define ADL_CS_ADOBE			0x0010      ///< Adobe RGB
+#define ADL_CS_P3				0x0020      ///< DCI-P3
+#define ADL_CS_scRGB_MS_REF		0x0040      ///< scRGB (MS Reference)
+#define ADL_CS_DISPLAY_NATIVE	0x0080      ///< Display Native
+#define ADL_CS_APP_CONTROL 		0x0100      ///< Application Controlled
+#define ADL_CS_DOLBYVISION      0x0200      ///< DolbyVision
+/// @}
+
+/// \defgroup define_HDR_support ADLDDCInfo2 HDR support options
+/// @{
+/// defines for iSupportedHDR in ADLDDCInfo2
+#define ADL_HDR_CEA861_3		0x0001      ///< HDR10/CEA861.3 HDR supported
+#define ADL_HDR_DOLBYVISION		0x0002      ///< DolbyVision HDR supported
+#define ADL_HDR_FREESYNC_HDR	0x0004      ///< FreeSync HDR supported
+/// @}
 
 /// \defgroup define_dbd_state Deep Bit Depth
-// @{
+/// @{
 
 /// defines for ADL_Workstation_DeepBitDepth_Get and  ADL_Workstation_DeepBitDepth_Set functions
 // This value indicates that the deep bit depth state is forced off
@@ -1626,6 +1675,24 @@ enum ADLSampleRate
 /// Fan speed has been customized by the user, and fan is not running in automatic mode.
 #define ADL_OD6_FANSPEED_USER_DEFINED                       0x00000100
 // @}
+
+/// \defgroup define_overdrive_EventCounter_type
+/// These defines the EventCounter type being reported. It is used by \ref ADL2_OverdriveN_CountOfEvents_Get ,can be used on older OD version supported ASICs also.
+// @{
+#define ADL_ODN_EVENTCOUNTER_THERMAL        0
+#define ADL_ODN_EVENTCOUNTER_VPURECOVERY    1
+// @}
+
+///////////////////////////////////////////////////////////////////////////
+// ADLODNControlType Enumeration
+///////////////////////////////////////////////////////////////////////////
+enum ADLODNControlType
+{
+	ODNControlType_Current = 0,
+	ODNControlType_Default,
+	ODNControlType_Auto,
+    ODNControlType_Manual
+};
 
 /// \defgroup define_ecc_mode_states
 /// These defines the ECC(Error Correction Code) state. It is used by \ref ADL_Workstation_ECC_Get,ADL_Workstation_ECC_Set
@@ -1884,6 +1951,7 @@ enum ADLSampleRate
 #define ADL_FREESYNC_CAP_CURRENTMODESUPPORTED           (1 << 3)
 #define ADL_FREESYNC_CAP_NOCFXORCFXSUPPORTED            (1 << 4)
 #define ADL_FREESYNC_CAP_NOGENLOCKORGENLOCKSUPPORTED    (1 << 5)
+// @}
 
 
 /// \defgroup define_MST_CommandLine_execute
