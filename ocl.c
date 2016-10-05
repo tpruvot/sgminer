@@ -765,6 +765,15 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     return NULL;
   }
 
+  if(algorithm->type == ALGO_ETHASH)
+  {
+    clState->GenerateDAG = clCreateKernel(clState->program, "GenerateDAG", &status);
+    if (status != CL_SUCCESS) {
+      applog(LOG_ERR, "Error %d while creating DAG generation kernel.", status);
+      return(NULL);
+    }
+  }
+
   clState->n_extra_kernels = algorithm->n_extra_kernels;
   if (clState->n_extra_kernels > 0) {
     unsigned int i;
@@ -909,12 +918,19 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     }
   }
 
+  if (algorithm->type == ALGO_ETHASH) {
+    readbufsize = 32UL;
+    clState->DAG = clState->EthCache = NULL;
+  }
+
   applog(LOG_DEBUG, "Using read buffer sized %lu", (unsigned long)readbufsize);
   clState->CLbuffer0 = clCreateBuffer(clState->context, CL_MEM_READ_ONLY, readbufsize, NULL, &status);
   if (status != CL_SUCCESS) {
     applog(LOG_ERR, "Error %d: clCreateBuffer (CLbuffer0)", status);
     return NULL;
   }
+
+  clState->devid = cgpu->device_id;
 
   applog(LOG_DEBUG, "Using output buffer sized %lu", BUFFERSIZE);
   clState->outputBuffer = clCreateBuffer(clState->context, CL_MEM_WRITE_ONLY, BUFFERSIZE, NULL, &status);

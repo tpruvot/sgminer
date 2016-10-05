@@ -16,11 +16,15 @@ typedef struct __clState {
   cl_context context;
   cl_kernel kernel;
   cl_kernel *extra_kernels;
+  cl_kernel GenerateDAG;
   size_t n_extra_kernels;
   cl_command_queue commandQueue;
   cl_program program;
   cl_mem outputBuffer;
   cl_mem CLbuffer0;
+  cl_mem DAG;
+  cl_mem EthCache;
+  cl_uint EpochNumber;
   cl_mem MidstateBuf;
   cl_mem padbuffer8;
   cl_mem buffer1;
@@ -29,6 +33,7 @@ typedef struct __clState {
   unsigned char cldata[168];
   bool goffset;
   cl_uint vwidth;
+  int devid;
   size_t max_work_size;
   size_t wsize;
   size_t compute_shaders;

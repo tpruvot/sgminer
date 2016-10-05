@@ -41,6 +41,7 @@ typedef enum {
   ALGO_SIBCOIN,
   ALGO_SKEIN2,
   ALGO_VELTOR,
+  ALGO_ETHASH,
   ALGO_COUNT
 } algorithm_type_t;
 

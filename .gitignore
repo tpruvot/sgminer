@@ -1,7 +1,6 @@
-cgminer
-cgminer.exe
-minerd
-minerd.exe
+sgminer
+sgminer.exe
+*.a
 *.o
 *.lo
 *.bin
@@ -43,5 +42,7 @@ lib/stdint.h
 lib/warn-on-use.h
 
 mkinstalldirs
+.dirstamp
+m4/
 
 *.swp

@@ -83,6 +83,7 @@ sgminer_SOURCES += algorithm/yescrypt.c algorithm/yescrypt-opt.c algorithm/yescr
 sgminer_SOURCES += algorithm/blake256.c algorithm/blake256.h
 sgminer_SOURCES += algorithm/blakecoin.c algorithm/blakecoin.h
 sgminer_SOURCES += algorithm/decred.c
+sgminer_SOURCES += algorithm/ethash.c algorithm/ethgencache.c algorithm/ethash.h algorithm/eth-sha3.c algorithm/eth-sha3.h
 
 bin_SCRIPTS	= $(top_srcdir)/kernel/*.cl
 

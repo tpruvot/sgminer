@@ -1608,7 +1608,6 @@ static void poolstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __m
     root = api_add_escape(root, "URL", pool->rpc_url, false);
     root = api_add_escape(root, "Profile", pool->profile, false);
     root = api_add_escape(root, "Algorithm", pool->algorithm.name, false);
-    root = api_add_escape(root, "Algorithm Type", (char *)algorithm_type_str[pool->algorithm.type], false);
 
     //show nfactor for nscrypt
     if(pool->algorithm.type == ALGO_NSCRYPT)

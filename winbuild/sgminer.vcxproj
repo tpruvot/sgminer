@@ -270,6 +270,9 @@
     <ClCompile Include="..\algorithm\blake256.c" />
     <ClCompile Include="..\algorithm\credits.c" />
     <ClCompile Include="..\algorithm\decred.c" />
+    <ClCompile Include="..\algorithm\eth-sha3.c" />
+    <ClCompile Include="..\algorithm\ethash.c" />
+    <ClCompile Include="..\algorithm\ethgencache.c" />
     <ClCompile Include="..\algorithm\lyra2.c" />
     <ClCompile Include="..\algorithm\lyra2re.c" />
     <ClCompile Include="..\algorithm\lyra2rev2.c" />

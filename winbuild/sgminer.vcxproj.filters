@@ -238,7 +238,16 @@
     </ClCompile>
     <ClCompile Include="..\algorithm\veltor.c">
       <Filter>Source Files\algorithm</Filter>
-    </ClCompie>
+    </ClCompile>
+    <ClCompile Include="..\algorithm\ethash.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\algorithm\ethashcache.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\algorithm\ethash-sha3.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
     <ClCompile Include="..\nvml.c">
       <Filter>Source Files</Filter>
     </ClCompile>
