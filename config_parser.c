@@ -2239,9 +2239,8 @@ void update_config_intensity(struct profile *profile)
 
 void update_config_xintensity(struct profile *profile)
 {
+  char buf[255] = { 0 };
   int i;
-  char buf[255];
-  memset(buf, 0, 255);
 
   for (i = 0; i<nDevs; ++i) {
     sprintf(buf, "%s%s%d", buf, ((i > 0)?",":""), gpus[i].xintensity);
@@ -2251,7 +2250,7 @@ void update_config_xintensity(struct profile *profile)
     profile->intensity[0] = 0;
   }
 
-  if (profile->xintensity) {
+  if (profile->xintensity && profile->xintensity != default_profile.xintensity) {
     free(profile->xintensity);
   }
 
@@ -2281,9 +2280,8 @@ void update_config_xintensity(struct profile *profile)
 
 void update_config_rawintensity(struct profile *profile)
 {
+  char buf[255] = { 0 };
   int i;
-  char buf[255];
-  memset(buf, 0, 255);
 
   for (i = 0; i<nDevs; ++i) {
     sprintf(buf, "%s%s%d", buf, ((i > 0)?",":""), gpus[i].rawintensity);
@@ -2297,7 +2295,7 @@ void update_config_rawintensity(struct profile *profile)
     profile->xintensity[0] = 0;
   }
 
-  if (profile->rawintensity) {
+  if (profile->rawintensity && profile->rawintensity != default_profile.rawintensity) {
     free(profile->rawintensity);
   }
 
