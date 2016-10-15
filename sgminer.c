@@ -584,12 +584,8 @@ struct pool *add_pool(void)
   pool->quota = 1;
   adjust_quota_gcd();
 
-  // NiceHash abused their position when funding SG to make
-  // their stupid non-standard extension that no one else uses
-  // (which can cause serious issues with things like P2Pool)
-  // to true by default - set it to what it should be - false
-  // unless enabled explicitly.
-  pool->extranonce_subscribe = false;
+  // todo: disable for ETH by default, enable for DCR
+  pool->extranonce_subscribe = true;
 
   pool->description = "";
 

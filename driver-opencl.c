@@ -1267,7 +1267,7 @@ static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_inf
     if(fanspeed > 0)
       tailsprintf(buf, bufsiz, " FAN%3d%% ", fanspeed);
     else
-      tailsprintf(buf, bufsiz, "        ");
+      tailsprintf(buf, bufsiz, "         ");
     tailsprintf(buf, bufsiz, "| ");
 #endif
   }
