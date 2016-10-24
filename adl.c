@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#if defined(HAVE_ADL) && (defined(__unix__) || defined (WIN32))
+#if defined(HAVE_ADL)
 
 #include <stdio.h>
 #include <string.h>
@@ -77,48 +77,64 @@ static void *GetProcAddress(void *pLibrary, const char *name)
 }
 #endif
 
-static  ADL_MAIN_CONTROL_CREATE     ADL_Main_Control_Create;
-static  ADL_MAIN_CONTROL_DESTROY    ADL_Main_Control_Destroy;
-static  ADL_ADAPTER_NUMBEROFADAPTERS_GET  ADL_Adapter_NumberOfAdapters_Get;
-static  ADL_ADAPTER_ADAPTERINFO_GET   ADL_Adapter_AdapterInfo_Get;
-static  ADL_ADAPTER_ID_GET      ADL_Adapter_ID_Get;
-static  ADL_MAIN_CONTROL_REFRESH    ADL_Main_Control_Refresh;
-static  ADL_ADAPTER_VIDEOBIOSINFO_GET   ADL_Adapter_VideoBiosInfo_Get;
-static  ADL_DISPLAY_DISPLAYINFO_GET   ADL_Display_DisplayInfo_Get;
-static  ADL_ADAPTER_ACCESSIBILITY_GET   ADL_Adapter_Accessibility_Get;
+static ADL_MAIN_CONTROL_CREATE ADL_Main_Control_Create = NULL;
+static ADL_MAIN_CONTROL_DESTROY ADL_Main_Control_Destroy = NULL;
+static ADL_ADAPTER_NUMBEROFADAPTERS_GET ADL_Adapter_NumberOfAdapters_Get = NULL;
+static ADL_ADAPTER_ADAPTERINFO_GET ADL_Adapter_AdapterInfo_Get = NULL;
+static ADL_ADAPTER_ID_GET ADL_Adapter_ID_Get = NULL;
+static ADL_MAIN_CONTROL_REFRESH ADL_Main_Control_Refresh = NULL;
+static ADL_ADAPTER_VIDEOBIOSINFO_GET ADL_Adapter_VideoBiosInfo_Get = NULL;
+static ADL_DISPLAY_DISPLAYINFO_GET ADL_Display_DisplayInfo_Get = NULL;
+static ADL_ADAPTER_ACCESSIBILITY_GET ADL_Adapter_Accessibility_Get = NULL;
 
-static  ADL_OVERDRIVE_CAPS      ADL_Overdrive_Caps;
+static ADL_OVERDRIVE_CAPS ADL_Overdrive_Caps = NULL;
 
-static  ADL_OVERDRIVE5_TEMPERATURE_GET    ADL_Overdrive5_Temperature_Get;
-static  ADL_OVERDRIVE5_CURRENTACTIVITY_GET  ADL_Overdrive5_CurrentActivity_Get;
-static  ADL_OVERDRIVE5_ODPARAMETERS_GET   ADL_Overdrive5_ODParameters_Get;
-static  ADL_OVERDRIVE5_FANSPEEDINFO_GET   ADL_Overdrive5_FanSpeedInfo_Get;
-static  ADL_OVERDRIVE5_FANSPEED_GET   ADL_Overdrive5_FanSpeed_Get;
-static  ADL_OVERDRIVE5_FANSPEED_SET   ADL_Overdrive5_FanSpeed_Set;
-static  ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET  ADL_Overdrive5_ODPerformanceLevels_Get;
-static  ADL_OVERDRIVE5_ODPERFORMANCELEVELS_SET  ADL_Overdrive5_ODPerformanceLevels_Set;
-static  ADL_OVERDRIVE5_POWERCONTROL_GET   ADL_Overdrive5_PowerControl_Get;
-static  ADL_OVERDRIVE5_POWERCONTROL_SET   ADL_Overdrive5_PowerControl_Set;
-static  ADL_OVERDRIVE5_FANSPEEDTODEFAULT_SET  ADL_Overdrive5_FanSpeedToDefault_Set;
+static ADL_OVERDRIVE5_TEMPERATURE_GET ADL_Overdrive5_Temperature_Get = NULL;
+static ADL_OVERDRIVE5_CURRENTACTIVITY_GET ADL_Overdrive5_CurrentActivity_Get = NULL;
+static ADL_OVERDRIVE5_ODPARAMETERS_GET ADL_Overdrive5_ODParameters_Get = NULL;
+static ADL_OVERDRIVE5_FANSPEEDINFO_GET ADL_Overdrive5_FanSpeedInfo_Get = NULL;
+static ADL_OVERDRIVE5_FANSPEED_GET ADL_Overdrive5_FanSpeed_Get = NULL;
+static ADL_OVERDRIVE5_FANSPEED_SET ADL_Overdrive5_FanSpeed_Set = NULL;
+static ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET ADL_Overdrive5_ODPerformanceLevels_Get = NULL;
+static ADL_OVERDRIVE5_ODPERFORMANCELEVELS_SET ADL_Overdrive5_ODPerformanceLevels_Set = NULL;
+static ADL_OVERDRIVE5_POWERCONTROL_GET ADL_Overdrive5_PowerControl_Get = NULL;
+static ADL_OVERDRIVE5_POWERCONTROL_SET ADL_Overdrive5_PowerControl_Set = NULL;
+static ADL_OVERDRIVE5_FANSPEEDTODEFAULT_SET ADL_Overdrive5_FanSpeedToDefault_Set = NULL;
 
-static  ADL_OVERDRIVE6_CAPABILITIES_GET   ADL_Overdrive6_Capabilities_Get;
-static  ADL_OVERDRIVE6_FANSPEED_GET   ADL_Overdrive6_FanSpeed_Get;
-static  ADL_OVERDRIVE6_THERMALCONTROLLER_CAPS ADL_Overdrive6_ThermalController_Caps;
-static  ADL_OVERDRIVE6_TEMPERATURE_GET    ADL_Overdrive6_Temperature_Get;
-static  ADL_OVERDRIVE6_STATEINFO_GET    ADL_Overdrive6_StateInfo_Get;
-static  ADL_OVERDRIVE6_CURRENTSTATUS_GET  ADL_Overdrive6_CurrentStatus_Get;
-static  ADL_OVERDRIVE6_POWERCONTROL_CAPS  ADL_Overdrive6_PowerControl_Caps;
-static  ADL_OVERDRIVE6_POWERCONTROLINFO_GET ADL_Overdrive6_PowerControlInfo_Get;
-static  ADL_OVERDRIVE6_POWERCONTROL_GET   ADL_Overdrive6_PowerControl_Get;
-static  ADL_OVERDRIVE6_FANSPEED_SET   ADL_Overdrive6_FanSpeed_Set;
-static  ADL_OVERDRIVE6_STATE_SET    ADL_Overdrive6_State_Set;
-static  ADL_OVERDRIVE6_POWERCONTROL_SET   ADL_Overdrive6_PowerControl_Set;
+static ADL_OVERDRIVE6_CAPABILITIES_GET ADL_Overdrive6_Capabilities_Get = NULL;
+static ADL_OVERDRIVE6_FANSPEED_GET ADL_Overdrive6_FanSpeed_Get = NULL;
+static ADL_OVERDRIVE6_THERMALCONTROLLER_CAPS ADL_Overdrive6_ThermalController_Caps = NULL;
+static ADL_OVERDRIVE6_TEMPERATURE_GET ADL_Overdrive6_Temperature_Get = NULL;
+static ADL_OVERDRIVE6_STATEINFO_GET ADL_Overdrive6_StateInfo_Get = NULL;
+static ADL_OVERDRIVE6_CURRENTSTATUS_GET ADL_Overdrive6_CurrentStatus_Get = NULL;
+static ADL_OVERDRIVE6_POWERCONTROL_CAPS ADL_Overdrive6_PowerControl_Caps = NULL;
+static ADL_OVERDRIVE6_POWERCONTROLINFO_GET ADL_Overdrive6_PowerControlInfo_Get = NULL;
+static ADL_OVERDRIVE6_POWERCONTROL_GET ADL_Overdrive6_PowerControl_Get = NULL;
+static ADL_OVERDRIVE6_FANSPEED_SET ADL_Overdrive6_FanSpeed_Set = NULL;
+static ADL_OVERDRIVE6_STATE_SET ADL_Overdrive6_State_Set = NULL;
+static ADL_OVERDRIVE6_POWERCONTROL_SET ADL_Overdrive6_PowerControl_Set = NULL;
 
-#if defined (UNIX)
-  static void *hDLL;  // Handle to .so library
+static ADL_ADAPTERX2_CAPS ADL_AdapterX2_Caps = NULL;
+static ADL2_OVERDRIVE_CAPS ADL2_Overdrive_Caps = NULL;
+static ADL2_ADAPTER_ACTIVE_GET ADL2_Adapter_Active_Get = NULL;
+static ADL2_OVERDRIVEN_CAPABILITIES_GET ADL2_OverdriveN_Capabilities_Get = NULL;
+static ADL2_OVERDRIVEN_SYSTEMCLOCKS_GET ADL2_OverdriveN_SystemClocks_Get = NULL;
+static ADL2_OVERDRIVEN_SYSTEMCLOCKS_SET ADL2_OverdriveN_SystemClocks_Set = NULL;
+static ADL2_OVERDRIVEN_PERFORMANCESTATUS_GET ADL2_OverdriveN_PerformanceStatus_Get = NULL;
+static ADL2_OVERDRIVEN_FANCONTROL_GET ADL2_OverdriveN_FanControl_Get = NULL;
+static ADL2_OVERDRIVEN_FANCONTROL_SET ADL2_OverdriveN_FanControl_Set = NULL;
+static ADL2_OVERDRIVEN_POWERLIMIT_GET ADL2_OverdriveN_PowerLimit_Get = NULL;
+static ADL2_OVERDRIVEN_POWERLIMIT_SET ADL2_OverdriveN_PowerLimit_Set = NULL;
+static ADL2_OVERDRIVEN_MEMORYCLOCKS_GET ADL2_OverdriveN_MemoryClocks_Get = NULL;
+static ADL2_OVERDRIVEN_MEMORYCLOCKS_GET ADL2_OverdriveN_MemoryClocks_Set = NULL;
+static ADL2_OVERDRIVEN_TEMPERATURE_GET ADL2_OverdriveN_Temperature_Get = NULL;
+
+#ifdef WIN32
+static HINSTANCE hDLL;   // Handle to DLL
 #else
-  static HINSTANCE hDLL;   // Handle to DLL
+static void *hDLL;  // Handle to .so library
 #endif
+
 static int iNumberAdapters;
 static LPAdapterInfo lpInfo = NULL;
 
@@ -222,10 +238,10 @@ static bool init_overdrive5()
     !ADL_Overdrive5_ODPerformanceLevels_Get || !ADL_Overdrive5_ODPerformanceLevels_Set ||
     !ADL_Overdrive5_PowerControl_Get || !ADL_Overdrive5_PowerControl_Set ||
     !ADL_Overdrive5_FanSpeedToDefault_Set) {
-      applog(LOG_WARNING, "ATI ADL Overdrive5's API is missing or broken.");
+      applog(LOG_WARNING, "AMD ADL Overdrive 5 API is missing or broken.");
       return false;
   } else {
-    applog(LOG_INFO, "ATI ADL Overdrive5 API found.");
+    applog(LOG_INFO, "AMD ADL Overdrive 5 API found.");
   }
 
   return true;
@@ -233,6 +249,8 @@ static bool init_overdrive5()
 
 static bool init_overdrive6()
 {
+#ifdef ADL_OD6_CAPABILITY_GPU_ACTIVITY_MONITOR
+#define ADL_OD6
   ADL_Overdrive6_FanSpeed_Get = (ADL_OVERDRIVE6_FANSPEED_GET) GetProcAddress(hDLL,"ADL_Overdrive6_FanSpeed_Get");
   ADL_Overdrive6_ThermalController_Caps = (ADL_OVERDRIVE6_THERMALCONTROLLER_CAPS)GetProcAddress (hDLL, "ADL_Overdrive6_ThermalController_Caps");
   ADL_Overdrive6_Temperature_Get = (ADL_OVERDRIVE6_TEMPERATURE_GET)GetProcAddress (hDLL, "ADL_Overdrive6_Temperature_Get");
@@ -252,27 +270,59 @@ static bool init_overdrive6()
     !ADL_Overdrive6_PowerControl_Caps || !ADL_Overdrive6_PowerControlInfo_Get ||
     !ADL_Overdrive6_PowerControl_Get || !ADL_Overdrive6_FanSpeed_Set ||
     !ADL_Overdrive6_State_Set || !ADL_Overdrive6_PowerControl_Set) {
-      applog(LOG_WARNING, "ATI ADL Overdrive6's API is missing or broken.");
+      applog(LOG_WARNING, "AMD ADL Overdrive 6 API is missing or broken.");
     return false;
   } else {
-    applog(LOG_INFO, "ATI ADL Overdrive6 API found.");
+    applog(LOG_INFO, "AMD ADL Overdrive 6 API found.");
   }
-
   return true;
+#else
+  return false;
+#endif
+}
+
+static bool init_overdriveN()
+{
+#ifdef ADL_ODN_EVENTCOUNTER_THERMAL
+#define ADL_ODN
+  ADL_AdapterX2_Caps = (ADL_ADAPTERX2_CAPS) GetProcAddress(hDLL, "ADL_AdapterX2_Caps");
+  ADL2_Adapter_Active_Get = (ADL2_ADAPTER_ACTIVE_GET)GetProcAddress(hDLL, "ADL2_Adapter_Active_Get");
+  ADL2_OverdriveN_Capabilities_Get = (ADL2_OVERDRIVEN_CAPABILITIES_GET) GetProcAddress(hDLL, "ADL2_OverdriveN_Capabilities_Get");
+  ADL2_OverdriveN_SystemClocks_Get = (ADL2_OVERDRIVEN_SYSTEMCLOCKS_GET) GetProcAddress(hDLL, "ADL2_OverdriveN_SystemClocks_Get");
+  ADL2_OverdriveN_SystemClocks_Set = (ADL2_OVERDRIVEN_SYSTEMCLOCKS_SET) GetProcAddress(hDLL, "ADL2_OverdriveN_SystemClocks_Set");
+  ADL2_OverdriveN_MemoryClocks_Get = (ADL2_OVERDRIVEN_MEMORYCLOCKS_GET) GetProcAddress(hDLL, "ADL2_OverdriveN_MemoryClocks_Get");
+  ADL2_OverdriveN_MemoryClocks_Set = (ADL2_OVERDRIVEN_MEMORYCLOCKS_SET) GetProcAddress(hDLL, "ADL2_OverdriveN_MemoryClocks_Set");
+  ADL2_OverdriveN_PerformanceStatus_Get = (ADL2_OVERDRIVEN_PERFORMANCESTATUS_GET) GetProcAddress(hDLL,"ADL2_OverdriveN_PerformanceStatus_Get");
+  ADL2_OverdriveN_FanControl_Get = (ADL2_OVERDRIVEN_FANCONTROL_GET) GetProcAddress(hDLL, "ADL2_OverdriveN_FanControl_Get");
+  ADL2_OverdriveN_FanControl_Set = (ADL2_OVERDRIVEN_FANCONTROL_SET) GetProcAddress(hDLL, "ADL2_OverdriveN_FanControl_Set");
+  ADL2_OverdriveN_PowerLimit_Get = (ADL2_OVERDRIVEN_POWERLIMIT_GET) GetProcAddress(hDLL, "ADL2_OverdriveN_PowerLimit_Get");
+  ADL2_OverdriveN_PowerLimit_Set = (ADL2_OVERDRIVEN_POWERLIMIT_SET) GetProcAddress(hDLL, "ADL2_OverdriveN_PowerLimit_Set");
+  ADL2_OverdriveN_Temperature_Get = (ADL2_OVERDRIVEN_TEMPERATURE_GET) GetProcAddress(hDLL, "ADL2_OverdriveN_Temperature_Get");
+  ADL2_Overdrive_Caps = (ADL2_OVERDRIVE_CAPS) GetProcAddress(hDLL, "ADL2_Overdrive_Caps");
+  if (!ADL2_Adapter_Active_Get || !ADL2_OverdriveN_Capabilities_Get || !ADL2_OverdriveN_FanControl_Get || !ADL2_OverdriveN_Temperature_Get) {
+    //applog(LOG_WARNING, "AMD ADL Overdrive N API is missing or broken.");
+    return false;
+  } else {
+    applog(LOG_INFO, "AMD ADL Overdrive N API found.");
+  }
+  return true;
+#else
+  return false;
+#endif
 }
 
 static bool prepare_adl(void)
 {
   int result;
 
-#if defined (UNIX)
-  hDLL = dlopen( "libatiadlxx.so", RTLD_LAZY|RTLD_GLOBAL);
-#else
+#ifdef WIN32
   hDLL = LoadLibrary("atiadlxx.dll");
   if (hDLL == NULL)
     // A 32 bit calling application on 64 bit OS will fail to LoadLIbrary.
     // Try to load the 32 bit library (atiadlxy.dll) instead
     hDLL = LoadLibrary("atiadlxy.dll");
+#else
+  hDLL = dlopen( "libatiadlxx.so", RTLD_LAZY|RTLD_GLOBAL);
 #endif
   if (hDLL == NULL) {
     applog(LOG_INFO, "Unable to load the AMD Display Library");
@@ -314,7 +364,8 @@ static bool prepare_adl(void)
   }
 
   init_overdrive5();
-  init_overdrive6(); // FIXME: don't if ADL6 is not present
+  init_overdrive6();
+  init_overdriveN();
 
   return true;
 }
@@ -713,8 +764,15 @@ void init_adl(int nDevs)
 
 static float __gpu_temp(struct gpu_adl *ga)
 {
-  if (ADL_Overdrive5_Temperature_Get(ga->iAdapterIndex, 0, &ga->lpTemperature) != ADL_OK)
-    return -1;
+  if (ADL_Overdrive5_Temperature_Get(ga->iAdapterIndex, 0, &ga->lpTemperature) != ADL_OK) {
+#ifdef ADL_OD6
+    int tmp = -1;
+    if (ADL_Overdrive6_Temperature_Get && ADL_Overdrive6_Temperature_Get(ga->iAdapterIndex, &tmp) == ADL_OK)
+      ga->lpTemperature.iTemperature = tmp * 1000;
+    else
+#endif
+      return -1.;
+  }
   return (float)ga->lpTemperature.iTemperature / 1000;
 }
 

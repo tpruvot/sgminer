@@ -235,6 +235,23 @@ typedef int ( *ADL_OVERDRIVE6_POWERCONTROLINFO_GET )(int iAdapterIndex, ADLOD6Po
 typedef int ( *ADL_OVERDRIVE6_POWERCONTROL_GET )(int iAdapterIndex, int *lpCurrentValue, int *lpDefaultValue);
 typedef int ( *ADL_OVERDRIVE6_POWERCONTROL_SET )(int iAdapterIndex, int iValue);
 
+// ADL2 Overdrive N
+typedef int ( *ADL_FLUSH_DRIVER_DATA) (int);
+typedef int ( *ADL_ADAPTERX2_CAPS) (int, int*);
+typedef int ( *ADL2_ADAPTER_ACTIVE_GET) (ADL_CONTEXT_HANDLE, int, int*);
+typedef int ( *ADL2_OVERDRIVE_CAPS) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int * iSupported, int * iEnabled, int * iVersion);
+typedef int ( *ADL2_OVERDRIVEN_CAPABILITIES_GET) (ADL_CONTEXT_HANDLE, int, ADLODNCapabilities*);
+typedef int ( *ADL2_OVERDRIVEN_SYSTEMCLOCKS_GET) (ADL_CONTEXT_HANDLE, int, ADLODNPerformanceLevels*);
+typedef int ( *ADL2_OVERDRIVEN_SYSTEMCLOCKS_SET) (ADL_CONTEXT_HANDLE, int, ADLODNPerformanceLevels*);
+typedef int ( *ADL2_OVERDRIVEN_MEMORYCLOCKS_GET) (ADL_CONTEXT_HANDLE, int, ADLODNPerformanceLevels*);
+typedef int ( *ADL2_OVERDRIVEN_MEMORYCLOCKS_SET) (ADL_CONTEXT_HANDLE, int, ADLODNPerformanceLevels*);
+typedef int ( *ADL2_OVERDRIVEN_PERFORMANCESTATUS_GET) (ADL_CONTEXT_HANDLE, int, ADLODNPerformanceStatus*);
+typedef int ( *ADL2_OVERDRIVEN_FANCONTROL_GET) (ADL_CONTEXT_HANDLE, int, ADLODNFanControl*);
+typedef int ( *ADL2_OVERDRIVEN_FANCONTROL_SET) (ADL_CONTEXT_HANDLE, int, ADLODNFanControl*);
+typedef int ( *ADL2_OVERDRIVEN_POWERLIMIT_GET) (ADL_CONTEXT_HANDLE, int, ADLODNPowerLimitSetting*);
+typedef int ( *ADL2_OVERDRIVEN_POWERLIMIT_SET) (ADL_CONTEXT_HANDLE, int, ADLODNPowerLimitSetting*);
+typedef int ( *ADL2_OVERDRIVEN_TEMPERATURE_GET) (ADL_CONTEXT_HANDLE, int, int, int*);
+
 // ------------------------------------------------------------------------------------------------------------
 
 // ADL I2C
