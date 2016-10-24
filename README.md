@@ -1,5 +1,16 @@
 # sgminer
 
+## About this fork
+
+This fork of sgminer (based on nicehash 5.2) is an attempt to support OpenCL on the nvidia cards.
+Howewer, only the more recent algos were wrote to support both nvidia and latest amd cards
+
+About ethash, a custom TdrDelay key is required in the windows registry:
+
+    HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers
+    TdrDelay=30
+
+BTC donation address: 1AJdfCpLWPNoAMDfHF1wD5y8VgKSSTHxPo (tpruvot)
 
 ## Introduction
 
