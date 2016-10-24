@@ -1754,11 +1754,11 @@ static bool parse_notify_ethash(struct pool *pool, json_t *val)
   cg_wunlock(&pool->data_lock);
 
   if (opt_protocol) {
-    applog(LOG_DEBUG, "job_id: %s", job_id);
-    applog(LOG_DEBUG, "EthWork: %s", EthWorkStr);
-    applog(LOG_DEBUG, "SeedHash: %s", SeedHashStr);
-    applog(LOG_DEBUG, "Target: %s", TgtStr);
-    applog(LOG_DEBUG, "clean: %s", clean ? "yes" : "no");
+    applog(LOG_NOTICE, "job_id: %s", job_id);
+    applog(LOG_NOTICE, "EthWork: %s", EthWorkStr);
+    applog(LOG_NOTICE, "SeedHash: %s", SeedHashStr);
+    applog(LOG_NOTICE, "Target: %s", TgtStr);
+    applog(LOG_NOTICE, "clean: %s", clean ? "yes" : "no");
   }
 
   /* A notify message is the closest stratum gets to a getwork */

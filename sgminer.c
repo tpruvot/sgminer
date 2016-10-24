@@ -2033,7 +2033,7 @@ static bool __build_gbt_txns(struct pool *pool, json_t *res_val)
     if (unlikely(!hex2bin(txn_bin, txn, txn_len / 2)))
       quit(1, "Failed to hex2bin txn_bin");
 
-    gen_hash(txn_bin, txn_len / 2, pool->txn_hashes + (32 * i));
+    gen_hash(txn_bin, (uint)(txn_len / 2), pool->txn_hashes + (32 * i));
     free(txn_bin);
   }
 out:
@@ -2043,13 +2043,13 @@ out:
 static unsigned char *__gbt_merkleroot(struct pool *pool)
 {
   unsigned char *merkle_hash;
-  int i, txns;
+  size_t i, txns;
 
   merkle_hash = (unsigned char *)calloc(32 * (pool->gbt_txns + 2), 1);
   if (unlikely(!merkle_hash))
     quit(1, "Failed to calloc merkle_hash in __gbt_merkleroot");
 
-  gen_hash(pool->coinbase, pool->coinbase_len, merkle_hash);
+  gen_hash(pool->coinbase, (uint)pool->coinbase_len, merkle_hash);
 
   if (pool->gbt_txns)
     memcpy(merkle_hash + 32, pool->txn_hashes, pool->gbt_txns * 32);
@@ -2119,6 +2119,7 @@ static double get_work_blockdiff(const struct work *work)
   uint8_t shift;
 
   if (work->pool->algorithm.type == ALGO_ETHASH) {
+    applog(LOG_INFO, "Network difficulty %.3f", work->network_diff);
     return work->network_diff;
   }
 
@@ -2237,9 +2238,9 @@ static bool gbt_decode(struct pool *pool, json_t *res_val)
   target = json_string_value(json_object_get(res_val, "target"));
   coinbasetxn = json_string_value(json_object_get(json_object_get(res_val, "coinbasetxn"), "data"));
   longpollid = json_string_value(json_object_get(res_val, "longpollid"));
-  expires = json_integer_value(json_object_get(res_val, "expires"));
-  version = json_integer_value(json_object_get(res_val, "version"));
-  curtime = json_integer_value(json_object_get(res_val, "curtime"));
+  expires = (int) json_integer_value(json_object_get(res_val, "expires"));
+  version = (int) json_integer_value(json_object_get(res_val, "version"));
+  curtime = (int) json_integer_value(json_object_get(res_val, "curtime"));
   submitold = json_is_true(json_object_get(res_val, "submitold"));
   bits = json_string_value(json_object_get(res_val, "bits"));
   workid = json_string_value(json_object_get(res_val, "workid"));
@@ -2391,7 +2392,6 @@ static bool pool_localgen(struct pool *pool)
 bool parse_diff_ethash(char* Target, char* TgtStr);
 static bool work_decode_eth(struct pool *pool, struct work *work, json_t *val)
 {
-  int i;
   bool ret = false;
   uint8_t EthWork[32], SeedHash[32], Target[32];
   const char *EthWorkStr, *SeedHashStr, *TgtStr;
@@ -2595,7 +2595,7 @@ static void suffix_string(uint64_t val, char *buf, size_t bufsiz, int sigdigits)
     dval = (double)val / dkilo;
     strcpy(suffix, "K");
   } else {
-    dval = val;
+    dval = (double)val;
     decimal = false;
   }
 
@@ -2620,7 +2620,7 @@ void suffix_string_double(double val, char *buf, size_t bufsiz, int sigdigits)
   if (val < 10) {
     snprintf(buf, bufsiz, "%.3f", val);
   } else {
-    return suffix_string(val, buf, bufsiz, sigdigits);
+    suffix_string(val, buf, bufsiz, sigdigits);
   }
 }
 
@@ -2652,8 +2652,8 @@ static void get_statline(char *buf, size_t bufsiz, struct cgpu_info *cgpu)
 
   wu = cgpu->diff1 / dev_runtime * 60.0;
 
-  dh64 = (double)cgpu->total_mhashes / dev_runtime * 1000000ull;
-  dr64 = (double)cgpu->rolling * 1000000ull;
+  dh64 = (uint64_t) (cgpu->total_mhashes / dev_runtime * 1000000ull);
+  dr64 = (uint64_t) (cgpu->rolling * 1000000ull);
   suffix_string(dh64, displayed_hashes, sizeof(displayed_hashes), 4);
   suffix_string(dr64, displayed_rolling, sizeof(displayed_rolling), 4);
 
@@ -2745,9 +2745,12 @@ static void curses_print_status(void)
   }
 
   wclrtoeol(statuswin);
-
-  cg_mvwprintw(statuswin, ++line, 0, "Block: %s...  Diff:%s  Started: %s  Best share: %s   ",
-         prev_block, block_diff, blocktime, best_share);
+  if (pool->algorithm.type == ALGO_ETHASH && strcmp(block_diff,"0") == 0)
+    cg_mvwprintw(statuswin, ++line, 0, "Block: %s...  Epoch %u  Started: %s  Best share: %s  ",
+           prev_block, pool->EpochNumber, blocktime, best_share);
+  else
+    cg_mvwprintw(statuswin, ++line, 0, "Block: %s...  Diff: %s  Started: %s  Best share: %s  ",
+           prev_block, block_diff, blocktime, best_share);
 
   mvwhline(statuswin, ++line, 0, '-', 80);
   mvwhline(statuswin, statusy - 1, 0, '-', 80);
@@ -2799,8 +2802,8 @@ static void curses_print_devstatus(struct cgpu_info *cgpu, int count)
   cgpu->drv->get_statline_before(logline, sizeof(logline), cgpu);
   cg_wprintw(statuswin, "%s", logline);
 
-  dh64 = (double)cgpu->total_mhashes / dev_runtime * 1000000ull;
-  dr64 = (double)cgpu->rolling * 1000000ull;
+  dh64 = (uint64_t) (cgpu->total_mhashes / dev_runtime * 1000000ull);
+  dr64 = (uint64_t) (cgpu->rolling * 1000000ull);
   suffix_string(dh64, displayed_hashes, sizeof(displayed_hashes), 4);
   suffix_string(dr64, displayed_rolling, sizeof(displayed_rolling), 4);
 
@@ -2816,7 +2819,7 @@ static void curses_print_devstatus(struct cgpu_info *cgpu, int count)
     cg_wprintw(statuswin, "%6s", displayed_rolling);
 
   if ((cgpu->diff_accepted + cgpu->diff_rejected) > 0)
-    reject_pct = (cgpu->diff_rejected / (cgpu->diff_accepted + cgpu->diff_rejected)) * 100;
+    reject_pct = (float) (cgpu->diff_rejected / (cgpu->diff_accepted + cgpu->diff_rejected)) * 100;
 
   adj_width(cgpu->hw_errors, &hwwidth);
   adj_width(wu, &wuwidth);
@@ -3366,7 +3369,6 @@ out:
 }
 
 const char eth_getwork_rpc[] = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getWork\",\"params\":[],\"id\":1}";
-const char eth_gethighestblock_rpc[] = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getBlockByNumber\",\"params\":[\"latest\", false],\"id\":1}";
 
 static bool get_upstream_work(struct work *work, CURL *curl, char *curl_err_str)
 {
@@ -7621,7 +7623,7 @@ static void hash_sole_work(struct thr_info *mythr)
 
         mult = 1000000 / ((sdiff.tv_usec + 0x400) / 0x400) + 0x10;
         mult *= cycle;
-        if (max_nonce > (0xffffffff * 0x400) / mult)
+        if (max_nonce > (0xffffffffULL * 0x400) / mult)
           max_nonce = 0xffffffff;
         else
           max_nonce = (max_nonce * mult) / 0x400;
@@ -7994,9 +7996,9 @@ static void *watchpool_thread(void __maybe_unused *userdata)
       if (intervals >= 600) {
         int shares = pool->diff1 - pool->last_shares;
 
-        pool->last_shares = pool->diff1;
+        pool->last_shares = (int) pool->diff1;
         pool->utility = (pool->utility + (double)shares * 0.63) / 1.63;
-        pool->shares = pool->utility;
+        pool->shares = (int) pool->utility;
         intervals = 0;
       }
 
