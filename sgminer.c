@@ -8995,7 +8995,8 @@ int main(int argc, char *argv[])
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0)
     fd = open("/dev/random", O_RDONLY);
-  read(fd, &eth_nonce, 4);
+  if (fd < 0 || read(fd, &eth_nonce, 4) != 4)
+    eth_nonce = rand();
   close(fd);
 #endif
   mutex_init(&hash_lock);
