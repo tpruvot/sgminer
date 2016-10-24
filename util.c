@@ -1690,18 +1690,11 @@ static bool parse_notify_ethash(struct pool *pool, json_t *val)
 {
   char *job_id;
   bool clean;
-  uint8_t EthWork[32], SeedHash[32], Target[32], NetDiff[32];
+  uint8_t EthWork[32], SeedHash[32], Target[32], NetDiff[32] = { 0 };
   char *EthWorkStr, *SeedHashStr, *TgtStr, *BlockHeightStr, *NetDiffStr = NULL;
   char* target = (char*) Target;
   char* netdiff = (char*) NetDiff;
   int ret = true;
-
-  /*json_t *arr = json_array_get(val, 0);
-  if (!arr || !json_is_array(arr)) {
-    applog(LOG_DEBUG, "parse_notify_ethash: Array was bad.");
-    ret = false;
-    goto out;
-  }*/
 
   job_id = json_array_string(val, 0);
   EthWorkStr = json_array_string(val, 1);
@@ -1712,6 +1705,7 @@ static bool parse_notify_ethash(struct pool *pool, json_t *val)
   if(json_array_size(val) == 6) {
     applog(LOG_DEBUG, "Pool supports network target.");
     NetDiffStr = json_array_string(val, 5);
+    if (NetDiffStr) parse_diff_ethash(netdiff, NetDiffStr);
   }
 
   if (job_id == NULL || SeedHashStr == NULL || EthWorkStr == NULL || TgtStr == NULL) {
@@ -1726,8 +1720,7 @@ static bool parse_notify_ethash(struct pool *pool, json_t *val)
 
   ret &= parse_diff_ethash(target, TgtStr);
 
-  if (!ret || (NetDiffStr != NULL && !parse_diff_ethash(netdiff, NetDiffStr))) {
-    ret = false;
+  if (!ret) {
     goto out;
   }
 
@@ -1748,10 +1741,13 @@ static bool parse_notify_ethash(struct pool *pool, json_t *val)
   pool->swork.diff = eth2pow256 / le256todouble(pool->Target);
   suffix_string_double(pool->swork.diff, pool->diff, sizeof(pool->diff), 0);
 
-  pool->diff1 = 0;
+  pool->diff1 = 0.;
   if (NetDiffStr != NULL) {
-    swab256(pool->NetDiff, NetDiff);
-    pool->diff1 = eth2pow256 / le256todouble(pool->NetDiff);
+    uint8_t tmp[32];
+    double dnet;
+    swab256(tmp, netdiff);
+    dnet = le256todouble(tmp);
+    pool->diff1 = dnet ? eth2pow256 / dnet : -1.0;
   }
   pool->getwork_requested++;
 

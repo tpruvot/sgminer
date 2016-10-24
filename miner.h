@@ -1331,7 +1331,6 @@ struct pool {
   uint32_t EpochNumber;
   uint8_t Target[32];
   uint8_t EthWork[32];
-  uint8_t NetDiff[32];
 
   double diff_accepted;
   double diff_rejected;

@@ -726,16 +726,16 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
 
   // Build information
   strcpy(build_data->source_filename, filename);
-	strcpy(build_data->platform, name);
-	strcpy(build_data->sgminer_path, sgminer_path);
+  strcpy(build_data->platform, name);
+  strcpy(build_data->sgminer_path, sgminer_path);
 
   build_data->kernel_path = (*opt_kernel_path) ? opt_kernel_path : NULL;
   build_data->work_size = clState->wsize;
   build_data->opencl_version = get_opencl_version(devices[gpu]);
 
   strcpy(build_data->binary_filename, filename);
-	build_data->binary_filename[strlen(filename) - 3] = 0x00;		// And one NULL terminator, cutting off the .cl suffix.
-	strcat(build_data->binary_filename, pbuff[gpu]);
+  build_data->binary_filename[strlen(filename) - 3] = 0x00; // And one NULL terminator, cutting off the .cl suffix.
+  strcat(build_data->binary_filename, pbuff[gpu]);
 
   if (clState->goffset) {
     strcat(build_data->binary_filename, "g");
@@ -757,13 +757,16 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       return NULL;
     }
 
-	// If it doesn't work, oh well, build it again next run
+    // If it doesn't work, oh well, build it again next run
     save_opencl_kernel(build_data, clState->program);
   }
 
   // Load kernels
-  applog(LOG_NOTICE, "Initialising kernel %s with nfactor %d, n %d",
-    filename, algorithm->nfactor, algorithm->n);
+  if (cgpu->algorithm.type != ALGO_SCRYPT)
+    applog(LOG_NOTICE, "Initialising kernel %s", filename);
+  else
+    applog(LOG_NOTICE, "Initialising kernel %s with nfactor %d, n %d",
+      filename, algorithm->nfactor, algorithm->n);
 
   /* get a kernel object handle for a kernel with the given name */
   clState->kernel = clCreateKernel(clState->program, "search", &status);
@@ -772,12 +775,11 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     return NULL;
   }
 
-  if(algorithm->type == ALGO_ETHASH)
-  {
+  if(algorithm->type == ALGO_ETHASH) {
     clState->GenerateDAG = clCreateKernel(clState->program, "GenerateDAG", &status);
     if (status != CL_SUCCESS) {
-      applog(LOG_ERR, "Error %d while creating DAG generation kernel.", status);
-      return(NULL);
+      applog(LOG_ERR, "Error %d while creating DAG generation kernel.", (int) status);
+      return NULL;
     }
   }
 

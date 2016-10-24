@@ -2388,8 +2388,65 @@ static bool pool_localgen(struct pool *pool)
   return (pool->has_stratum || pool->has_gbt);
 }
 
+bool parse_diff_ethash(char* Target, char* TgtStr);
+static bool work_decode_eth(struct pool *pool, struct work *work, json_t *val)
+{
+  int i;
+  bool ret = false;
+  uint8_t EthWork[32], SeedHash[32], Target[32];
+  const char *EthWorkStr, *SeedHashStr, *TgtStr;
+
+  json_t *res_arr = json_object_get(val, "result");
+  if (json_is_null(res_arr))
+    return false;
+
+  EthWorkStr = json_string_value(json_array_get(res_arr, 0));
+
+  SeedHashStr = json_string_value(json_array_get(res_arr, 1));
+
+  TgtStr = json_string_value(json_array_get(res_arr, 2));
+
+  if (EthWorkStr == NULL || SeedHashStr == NULL || TgtStr == NULL)
+    goto out;
+
+  if (!hex2bin(EthWork, EthWorkStr + 2, 32))
+    goto out;
+
+  if (!hex2bin(SeedHash, SeedHashStr + 2, 32))
+    goto out;
+
+  if (!parse_diff_ethash((char*) &Target[0], (char*) &TgtStr[0]))
+    goto out;
+
+  cg_wlock(&pool->data_lock);
+  cgtime(&pool->tv_lastwork);
+
+  if (memcmp(pool->SeedHash, SeedHash, 32)) {
+    pool->EpochNumber = EthCalcEpochNumber(SeedHash);
+    memcpy(pool->SeedHash, SeedHash, 32);
+  }
+
+  work->network_diff = pool->diff1;
+  work->EpochNumber = pool->EpochNumber;
+
+  memcpy(work->seedhash, pool->SeedHash, 32);
+  cg_wunlock(&pool->data_lock);
+
+  memcpy(work->data, EthWork, 32);
+  swab256(work->target, Target);
+
+  cgtime(&work->tv_staged);
+  ret = true;
+
+out:
+  return ret;
+}
+
 static bool work_decode(struct pool *pool, struct work *work, json_t *val)
 {
+  if (pool->algorithm.type == ALGO_ETHASH)
+    return work_decode_eth(pool, work, val);
+
   json_t *res_val = json_object_get(val, "result");
   bool ret = false;
 
@@ -2414,93 +2471,6 @@ static bool work_decode(struct pool *pool, struct work *work, json_t *val)
 
   cgtime(&work->tv_staged);
 
-  ret = true;
-
-out:
-  return ret;
-}
-
-
-bool parse_diff_ethash(char* Target, char* TgtStr);
-static bool work_decode_eth(struct pool *pool, struct work *work, json_t *val, json_t *ethval2)
-{
-  int i;
-  bool ret = false;
-  uint8_t EthWork[32], SeedHash[32], Target[32];
-  const char *EthWorkStr, *SeedHashStr, *TgtStr;
-  //char *BlockHeightStr, *NetDiffStr, FinalNetDiffStr[65];
-
-  cgtime(&pool->tv_lastwork);
-
-  json_t *res_arr = json_object_get(val, "result");
-  if (json_is_null(res_arr))
-    return false;
-
-  EthWorkStr = json_string_value(json_array_get(res_arr, 0));
-
-  SeedHashStr = json_string_value(json_array_get(res_arr, 1));
-
-  TgtStr = json_string_value(json_array_get(res_arr, 2));
-
-  if (EthWorkStr == NULL || SeedHashStr == NULL || TgtStr == NULL)
-    goto out;
-
-  if (!hex2bin(EthWork, EthWorkStr + 2, 32))
-    goto out;
-
-  if (!hex2bin(SeedHash, SeedHashStr + 2, 32))
-    goto out;
-
-  if (!parse_diff_ethash((char*) &Target[0], (char*) &TgtStr[0]))
-    goto out;
-
-/*
-  BlockHeightStr = json_string_value(json_object_get(res2_obj, "number"));
-  if(!BlockHeightStr) return false;
-
-  for(i = 0; BlockHeightStr[i]; ++i) {
-    if(i == 1) continue;
-    if(!isxdigit(BlockHeightStr[i])) return(false);
-  }
-
-  NetDiffStr = json_string_value(json_object_get(res2_obj, "difficulty"));
-  if(!NetDiffStr) return false;
-
-  for(i = 0; NetDiffStr[i]; ++i)
-  {
-    if(i == 1) continue;
-    if(!isxdigit(NetDiffStr[i])) return(false);
-  }
-
-  if(NetDiffStr[1] == 'x') work->network_diff = strtoull(NetDiffStr + 2, NULL);
-
-  if(strlen(NetDiffStr) != 66)
-  {
-    char NewNetDiffStr[65];
-    uint32_t PadLen = 66 - strlen(NetDiffStr);
-
-    memset(NewNetDiffStr, '0', PadLen);
-    memcpy(NewNetDiffStr + PadLen, NetDiffStr + 2, strlen(NetDiffStr) - 2);
-    NewNetDiffStr[64] = 0x00;
-
-    if(!hex2bin(FinalNetDiffStr, NewNetDiffStr, 32UL)) return(false);
-  }
-  else if(!hex2bin(FinalNetDiffStr, NetDiffStr + 2, 32UL)) return(false);
-*/
-
-  if (memcmp(pool->SeedHash, SeedHash, 32)) {
-    pool->EpochNumber = EthCalcEpochNumber(SeedHash);
-    memcpy(pool->SeedHash, SeedHash, 32);
-  }
-
-  memcpy(work->data, EthWork, 32);
-  memcpy(work->seedhash, pool->SeedHash, 32);
-  swab256(work->target, Target);
-
-  //work->network_diff = eth2pow256 / le256todouble(FinalNetDiffStr);
-  //work->EpochNumber = strtoul(BlockHeightStr + 2, NULL, 16) / 30000UL;
-  work->EpochNumber = pool->EpochNumber;
-  cgtime(&work->tv_staged);
   ret = true;
 
 out:
@@ -3009,6 +2979,8 @@ share_result(json_t *val, json_t *res, json_t *err, const struct work *work,
 {
   struct pool *pool = work->pool;
   struct cgpu_info *cgpu;
+  double sharediff = work->work_difficulty;
+  if (pool->algorithm.type == ALGO_ETHASH) sharediff /= 1e9;
 
   cgpu = get_thr_cgpu(work->thr_id);
 
@@ -3017,17 +2989,17 @@ share_result(json_t *val, json_t *res, json_t *err, const struct work *work,
     cgpu->accepted++;
     total_accepted++;
     pool->accepted++;
-    cgpu->diff_accepted += work->work_difficulty;
-    total_diff_accepted += work->work_difficulty;
-    pool->diff_accepted += work->work_difficulty;
+    cgpu->diff_accepted += sharediff;
+    total_diff_accepted += sharediff;
+    pool->diff_accepted += sharediff;
     mutex_unlock(&stats_lock);
 
     pool->seq_rejects = 0;
     cgpu->last_share_pool = pool->pool_no;
     cgpu->last_share_pool_time = time(NULL);
-    cgpu->last_share_diff = work->work_difficulty;
+    cgpu->last_share_diff = sharediff;
     pool->last_share_time = cgpu->last_share_pool_time;
-    pool->last_share_diff = work->work_difficulty;
+    pool->last_share_diff = sharediff;
     applog(LOG_DEBUG, "[THR%d] PROOF OF WORK RESULT: true (yay!!!)", work->thr_id);
     if (!QUIET) {
       if (total_pools > 1) {
@@ -3070,9 +3042,9 @@ share_result(json_t *val, json_t *res, json_t *err, const struct work *work,
     cgpu->rejected++;
     total_rejected++;
     pool->rejected++;
-    cgpu->diff_rejected += work->work_difficulty;
-    total_diff_rejected += work->work_difficulty;
-    pool->diff_rejected += work->work_difficulty;
+    cgpu->diff_rejected += sharediff;
+    total_diff_rejected += sharediff;
+    pool->diff_rejected += sharediff;
     pool->seq_rejects++;
     mutex_unlock(&stats_lock);
 
@@ -3203,22 +3175,24 @@ static bool submit_upstream_work(struct work *work, CURL *curl, char *curl_err_s
 
   cgpu = get_thr_cgpu(thr_id);
 
-  if(work->pool->algorithm.type == ALGO_ETHASH)
+  if (work->pool->algorithm.type == ALGO_ETHASH)
   {
-     s = (char *)malloc(sizeof(char) * (128 + 16 + 512));
      uint64_t tmp = bswap_64(work->Nonce);
      char *ASCIIMixHash = bin2hex(work->mixhash, 32);
      char *ASCIIPoWHash = bin2hex(work->data, 32);
      char *ASCIINonce = bin2hex((unsigned char*) &tmp, 8);
 
-     snprintf(s, 128 + 16 + 512, "{\"jsonrpc\":\"2.0\", \"method\":\"eth_submitWork\", \"params\":[\"0x%s\", \"0x%s\", \"0x%s\"],\"id\":1}",
-               ASCIINonce, ASCIIPoWHash, ASCIIMixHash);
+     s = (char*) malloc(sizeof(char) * (128 + 16 + 512));
+     snprintf(s, 128 + 16 + 512,
+         "{\"jsonrpc\":\"2.0\",\"method\":\"eth_submitWork\",\"params\":[\"0x%s\",\"0x%s\",\"0x%s\"],\"id\":1}",
+         ASCIINonce, ASCIIPoWHash, ASCIIMixHash);
 
      free(ASCIINonce);
      free(ASCIIMixHash);
      free(ASCIIPoWHash);
 
-  } else {
+     goto do_rpc_call;
+  }
 
   if (work->pool->algorithm.type == ALGO_CRE)
     endian_flip168(work->data, work->data);
@@ -3282,7 +3256,7 @@ static bool submit_upstream_work(struct work *work, CURL *curl, char *curl_err_s
     s = (char *)realloc_strcat(s, "\" ], \"id\":1}");
   }
 
-  } // ethash
+do_rpc_call:
 
   applog(LOG_DEBUG, "DBG: sending %s submit RPC call: %s", pool->rpc_url, s);
   s = (char *)realloc_strcat(s, "\n");
@@ -3399,7 +3373,7 @@ static bool get_upstream_work(struct work *work, CURL *curl, char *curl_err_str)
   struct pool *pool = work->pool;
   struct sgminer_pool_stats *pool_stats = &(pool->sgminer_pool_stats);
   struct timeval tv_elapsed;
-  json_t *val = NULL, *ethval2 = NULL;
+  json_t *val = NULL;
   bool rc = false;
   char *url;
 
@@ -3415,9 +3389,8 @@ static bool get_upstream_work(struct work *work, CURL *curl, char *curl_err_str)
   val = json_rpc_call(curl, curl_err_str, url, pool->rpc_userpass, pool->rpc_req, false,
           false, &work->rolltime, pool, false);
 
-  // WARNING: if ethval2 is NULL, it'll slip in here.
   if (likely(val)) {
-    rc = (pool->algorithm.type == ALGO_ETHASH) ? work_decode_eth(pool, work, val, ethval2) : work_decode(pool, work, val);
+    rc = work_decode(pool, work, val);
     if (unlikely(!rc))
       applog(LOG_DEBUG, "Failed to decode work in get_upstream_work");
   } else
@@ -4227,11 +4200,10 @@ static double share_diff(const struct work *work)
     uint64_t le_target = *(uint64_t*) (work->target + 24);
     if (*(uint64_t*) (tmp + 24) > le_target)
       return ret;
-  }
-  else {
-  d64 = work->pool->algorithm.share_diff_multiplier * truediffone;
-  s64 = le256todouble(work->hash);
-    ret = d64 / (s64 + 1.);
+  } else {
+    d64 = work->pool->algorithm.share_diff_multiplier * truediffone;
+    s64 = le256todouble(work->hash);
+    ret = s64 ? d64 / s64 : 0.;
   }
   applog(LOG_DEBUG, "Found share with difficulty %.3f", ret);
 
@@ -5616,7 +5588,6 @@ static bool cnx_needed(struct pool *pool)
 static void wait_lpcurrent(struct pool *pool);
 static void pool_resus(struct pool *pool);
 static void gen_stratum_work(struct pool *pool, struct work *work);
-static void gen_stratum_work_eth(struct pool *pool, struct work *work);
 static void stratum_resumed(struct pool *pool)
 {
   if (!pool->stratum_notify)
@@ -5737,8 +5708,7 @@ static void *stratum_rthread(void *userdata)
       /* Generate a single work item to update the current
        * block database */
       pool->swork.clean = false;
-      if(pool->algorithm.type == ALGO_ETHASH) gen_stratum_work_eth(pool, work);
-      else gen_stratum_work(pool, work);
+      gen_stratum_work(pool, work);
       work->longpoll = true;
       /* Return value doesn't matter. We're just informing
        * that we may need to restart. */
@@ -5776,7 +5746,7 @@ static void *stratum_sthread(void *userdata)
     struct stratum_share *sshare;
     uint32_t *hash32, *data, nonce;
     struct work *work;
-    bool submitted;
+    bool submitted = false;
 
     if (unlikely(pool->removed)) {
       break;
@@ -5785,37 +5755,6 @@ static void *stratum_sthread(void *userdata)
     work = (struct work *)tq_pop(pool->stratum_q, NULL);
     if (unlikely(!work))
       quit(1, "Stratum q returned empty work");
-
-    if (pool->algorithm.type == ALGO_ETHASH)
-    {
-      sshare = (struct stratum_share *)calloc(sizeof(struct stratum_share), 1);
-      hash32 = (uint32_t *)work->hash;
-      submitted = false;
-
-      sshare->sshare_time = time(NULL);
-      /* This work item is freed in parse_stratum_response */
-      sshare->work = work;
-
-      applog(LOG_DEBUG, "stratum_sthread() algorithm = %s", pool->algorithm.name);
-
-      uint64_t tmp = bswap_64(work->Nonce);
-      char *ASCIIMixHash = bin2hex(work->mixhash, 32);
-      char *ASCIIPoWHash = bin2hex(work->data, 32);
-      char *ASCIINonce = bin2hex((unsigned char*) &tmp, 8);
-
-      mutex_lock(&sshare_lock);
-      /* Give the stratum share a unique id */
-      sshare->id = swork_id++;
-      mutex_unlock(&sshare_lock);
-
-      snprintf(s, sizeof(s), "{\"id\": %d, \"method\": \"mining.submit\", \"params\": [\"%s\", \"%s\", \"0x%s\", \"0x%s\", \"0x%s\"]}",
-               sshare->id, pool->rpc_user, work->job_id, ASCIINonce, ASCIIPoWHash, ASCIIMixHash);
-
-      free(ASCIINonce);
-      free(ASCIIMixHash);
-      free(ASCIIPoWHash);
-
-    } else { // non eth
 
     if (unlikely(work->nonce2_len > 32)) {
       applog(LOG_ERR, "%s asking for inappropriately long nonce2 length %d", get_pool_name(pool), (int)work->nonce2_len);
@@ -5829,47 +5768,59 @@ static void *stratum_sthread(void *userdata)
     hash32 = (uint32_t *)work->hash;
     data  =  (uint32_t *)work->data;
 
-    submitted = false;
-
     sshare->sshare_time = time(NULL);
-    /* This work item is freed in parse_stratum_response */
+    // This work item is freed in parse_stratum_response
     sshare->work = work;
-
-    applog(LOG_DEBUG, "stratum_sthread() algorithm = %s", pool->algorithm.name);
-
-    nonce = data[19];
-    // Neoscrypt is little endian
-    if (pool->algorithm.type == ALGO_NEOSCRYPT) {
-      nonce = swab32(nonce);
-    }
-
-    if (pool->algorithm.type == ALGO_DECRED) {
-      uint16_t votebits;
-      memcpy(&votebits, &data[25], 2);
-      votebits = (votebits & 1) | (uint16_t) (opt_vote << 1);
-      nonce = be32dec(work->data + 140); // data[35];
-      __bin2hex(nonce2hex, work->data + 144, pool->n1_len);
-      if (opt_vote) sprintf(votehex, ", \"%04hx\"", votebits);
-    } else {
-      uint64_t nonce2[2] = { 0 };
-      *(nonce2) = htole64(work->nonce2);
-      __bin2hex(nonce2hex, (unsigned char*) nonce2, work->nonce2_len);
-    }
-
-    __bin2hex(noncehex, (const unsigned char *)&nonce, 4);
-
-    memset(s, 0, 1024);
-
     mutex_lock(&sshare_lock);
-    /* Give the stratum share a unique id */
+    // Give the stratum share an unique id
     sshare->id = swork_id++;
     mutex_unlock(&sshare_lock);
 
-    snprintf(s, sizeof(s),
-      "{\"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"%s], \"id\": %d, \"method\": \"mining.submit\"}",
-      pool->rpc_user, work->job_id, nonce2hex, work->ntime, noncehex, votehex, sshare->id);
+    applog(LOG_DEBUG, "stratum_sthread() algorithm = %s", pool->algorithm.name);
 
-    } // ethash
+    if (pool->algorithm.type == ALGO_ETHASH)
+    {
+      // special nonce/hash/mix format
+      uint64_t tmp = bswap_64(work->Nonce);
+      char *ASCIIMixHash = bin2hex(work->mixhash, 32);
+      char *ASCIIPoWHash = bin2hex(work->data, 32);
+      char *ASCIINonce = bin2hex((unsigned char*) &tmp, 8);
+
+      snprintf(s, sizeof(s),
+        "{\"method\":\"mining.submit\",\"params\":[\"%s\",\"%s\",\"0x%s\",\"0x%s\",\"0x%s\"],\"id\":%d}",
+        pool->rpc_user, work->job_id, ASCIINonce, ASCIIPoWHash, ASCIIMixHash, sshare->id);
+
+      free(ASCIINonce);
+      free(ASCIIMixHash);
+      free(ASCIIPoWHash);
+
+    } else {
+
+      nonce = data[19];
+      // Neoscrypt is little endian
+      if (pool->algorithm.type == ALGO_NEOSCRYPT) {
+        nonce = swab32(nonce);
+      }
+
+      if (pool->algorithm.type == ALGO_DECRED) {
+        uint16_t votebits;
+        memcpy(&votebits, &data[25], 2);
+        votebits = (votebits & 1) | (uint16_t) (opt_vote << 1);
+        nonce = be32dec(work->data + 140); // data[35];
+        __bin2hex(nonce2hex, work->data + 144, pool->n1_len);
+        if (opt_vote) sprintf(votehex, ",\"%04hx\"", votebits);
+      } else {
+        uint64_t nonce2[2] = { 0 };
+        *(nonce2) = htole64(work->nonce2);
+        __bin2hex(nonce2hex, (unsigned char*) nonce2, work->nonce2_len);
+      }
+
+      __bin2hex(noncehex, (const unsigned char *)&nonce, 4);
+
+      snprintf(s, sizeof(s),
+        "{\"method\":\"mining.submit\",\"params\":[\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%s],\"id\":%d}",
+        pool->rpc_user, work->job_id, nonce2hex, work->ntime, noncehex, votehex, sshare->id);
+    }
 
     applog(LOG_INFO, "Submitting share %08lx to %s", (long unsigned int)htole32(hash32[6]), get_pool_name(pool));
 
@@ -5971,7 +5922,7 @@ static bool pool_active(struct pool *pool, bool pinging)
 {
   struct timeval tv_getwork, tv_getwork_reply;
   bool ret = false;
-  json_t *val, *ethval2;
+  json_t *val;
   CURL *curl;
   char curl_err_str[CURL_ERROR_SIZE];
   int rolltime = 0;
@@ -6079,12 +6030,7 @@ retry_stratum:
   /* json_rpc_call() above succeeded */
   if (val) {
     struct work *work = make_work();
-    bool rc;
-
-    if (pool->algorithm.type == ALGO_ETHASH)
-      rc = work_decode_eth(pool, work, val, ethval2);
-    else
-      rc = work_decode(pool, work, val);
+    bool rc = work_decode(pool, work, val);
 
     if (rc) {
       applog(LOG_DEBUG, "Successfully retrieved and deciphered work from %s", get_pool_name(pool));
@@ -6369,6 +6315,9 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
   uint32_t *data32, *swap32;
   uint64_t nonce2le;
   int i, j;
+
+  if (pool->algorithm.type == ALGO_ETHASH)
+    return gen_stratum_work_eth(pool, work);
 
   cg_wlock(&pool->data_lock);
 
@@ -8857,7 +8806,7 @@ static void probe_pools(void)
 static void restart_mining_threads(unsigned int new_n_threads)
 {
   struct thr_info *thr;
-  unsigned int i, j, k;
+  int i, j, k;
 
   // Stop and free threads
   if (mining_thr)
@@ -9505,8 +9454,7 @@ retry:
           goto retry;
         }
       }
-      if(pool->algorithm.type == ALGO_ETHASH) gen_stratum_work_eth(pool, work);
-      else gen_stratum_work(pool, work);
+      gen_stratum_work(pool, work);
       applog(LOG_DEBUG, "Generated stratum work");
       stage_work(work);
       continue;
