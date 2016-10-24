@@ -541,6 +541,7 @@ struct cgpu_info {
   int sgminer_id;
   struct device_drv *drv;
   int device_id;
+  unsigned int pci_bus;
   char *name;  /* GPU family codename. */
   char *device_path;
   void *device_data;

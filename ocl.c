@@ -196,7 +196,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
   struct cgpu_info *cgpu = &gpus[gpu];
   bool amd_platform = false, nvidia_platform = false;
   _clState *clState = (_clState *)calloc(1, sizeof(_clState));
-  cl_uint preferred_vwidth, slot = 0, cpnd = 0, numDevices = clDevicesNum();
+  cl_uint preferred_vwidth, slot = 0, numDevices = clDevicesNum();
   cl_device_id *devices = (cl_device_id *)alloca(numDevices * sizeof(cl_device_id));
   build_kernel_data *build_data = (build_kernel_data *)alloca(sizeof(struct _build_kernel_data));
   char **pbuff = (char **)alloca(sizeof(char *) * numDevices), filename[256];
@@ -296,6 +296,13 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
 
 #ifdef HAVE_NVML
   if(nvidia_platform) {
+    #define CL_DEVICE_PCI_BUS_ID_NV  0x4008
+    #define CL_DEVICE_PCI_SLOT_ID_NV 0x4009
+    status = clGetDeviceInfo(devices[gpu], CL_DEVICE_PCI_BUS_ID_NV, sizeof(cl_uint), (void*) &slot, NULL);
+    if (status == CL_SUCCESS) {
+      cgpu->pci_bus = slot & 0xFF;
+      applog(LOG_INFO, "GPU %u PCI BUS %02x", gpu, cgpu->pci_bus);
+    }
     if(!opt_nonvml) {
       if(!nvml_active) {
         nvml_init();

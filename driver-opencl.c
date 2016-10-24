@@ -447,7 +447,7 @@ char *set_gpu_powertune(char *arg)
 char *set_gpu_vddc(char *arg)
 {
   int i, device = 0;
-  float val = 0;
+  double val = 0;
   char *nextptr;
 
   nextptr = strtok(arg, ",");
@@ -457,14 +457,14 @@ char *set_gpu_vddc(char *arg)
   if (val < 0 || val >= 9999)
     return "Invalid value passed to set_gpu_vddc";
 
-  gpus[device++].gpu_vddc = val;
+  gpus[device++].gpu_vddc = (float) val;
 
   while ((nextptr = strtok(NULL, ",")) != NULL) {
     val = atof(nextptr);
     if (val < 0 || val >= 9999)
       return "Invalid value passed to set_gpu_vddc";
 
-    gpus[device++].gpu_vddc = val;
+    gpus[device++].gpu_vddc = (float) val;
   }
   if (device == 1) {
     for (i = device; i < MAX_GPUDEVICES; i++)
@@ -1254,10 +1254,11 @@ static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_inf
   }
   else if(!opt_nonvml && gpu->has_nvml) {
 #ifdef HAVE_NVML
-    int gpuid = gpu->device_id, fanspeed;
+    uint busid = gpu->pci_bus;
+    int fanspeed = 0;
     float temp;
 
-    nvml_gpu_temp_and_fanspeed(gpuid, &temp, &fanspeed); // percent
+    nvml_gpu_temp_and_fanspeed(busid, &temp, &fanspeed); // percent
 
     if(temp > 0.0)
       tailsprintf(buf, bufsiz, "%5.1fC ", temp);

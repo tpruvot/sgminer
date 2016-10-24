@@ -45,17 +45,16 @@ static nvmlReturn_t (*NVML_nvmlShutdown)();
 void nvml_init() {
     nvmlReturn_t ret;
 
-#ifdef __linux__
-    hDLL = dlopen("libnvidia-ml.so", RTLD_LAZY | RTLD_GLOBAL);
-#else
+#ifdef WIN32
     /* Not in system path, but could be local */
     hDLL = LoadLibrary("nvml.dll");
     if(!hDLL) {
-        /* %ProgramW6432% is unsupported by OS prior to year 2009 */
         char path[512];
         ExpandEnvironmentStringsA("%ProgramFiles%\\NVIDIA Corporation\\NVSMI\\nvml.dll", path, sizeof(path));
         hDLL = LoadLibrary(path);
     }
+#else
+    hDLL = dlopen("libnvidia-ml.so", RTLD_LAZY | RTLD_GLOBAL);
 #endif
     if(!hDLL) {
         applog(LOG_INFO, "Unable to load the NVIDIA Management Library");
@@ -101,20 +100,56 @@ void nvml_init() {
 
     ret = NVML_nvmlInit();
     if(ret != NVML_SUCCESS) {
-        applog(LOG_ERR, "NVML: Initialisation failed with code %s",
-          NVML_nvmlErrorString(ret));
+        applog(LOG_ERR, "NVML: Init failed %s", NVML_nvmlErrorString(ret));
     }
 }
 
-void nvml_gpu_temp_and_fanspeed(const uint dev, float *temp, int *fanspeed) {
+// todo: cache mapping in an array (or cgpu)
+unsigned int nvml_gpu_id(const unsigned int busid)
+{
+    uint dev, devnum = 0;
+    bool matched = false;
+    nvmlReturn_t ret = NVML_nvmlDeviceGetCount(&devnum);
+    if (ret != NVML_SUCCESS) {
+        applog(LOG_ERR, "NVML: unable to query devices %s", NVML_nvmlErrorString(ret));
+        return UINT_MAX;
+    }
+
+    for (dev=0; dev < devnum; dev++) {
+        nvmlPciInfo_t pci;
+        nvmlDevice_t gpu = NULL;
+        ret = NVML_nvmlDeviceGetHandleByIndex(dev, &gpu);
+        if (ret != NVML_SUCCESS)
+            continue;
+        ret = NVML_nvmlDeviceGetPciInfo(gpu, &pci);
+        if (ret != NVML_SUCCESS)
+            continue;
+        if (pci.bus == busid) {
+            matched = true;
+            break;
+        }
+    }
+    if (!matched) {
+        return UINT_MAX;
+    }
+    return dev;
+}
+
+void nvml_gpu_temp_and_fanspeed(const unsigned int busid, float *temp, int *fanspeed)
+{
     nvmlReturn_t ret;
-    nvmlDevice_t gpu;
+    nvmlDevice_t gpu = NULL;
     uint nTemp, nSpeed;
 
+    uint dev = nvml_gpu_id(busid);
+    if (dev == UINT_MAX) {
+        *temp = -1.0f;
+        *fanspeed = -1;
+        return;
+    }
+
     ret = NVML_nvmlDeviceGetHandleByIndex(dev, &gpu);
-    if(ret != NVML_SUCCESS) {
-        applog(LOG_ERR, "NVML: GPU %d handle failed with code %s",
-          dev, NVML_nvmlErrorString(ret));
+    if (ret != NVML_SUCCESS || !gpu) {
         *temp = -1.0f;
         *fanspeed = -1;
         return;
@@ -127,11 +162,10 @@ void nvml_gpu_temp_and_fanspeed(const uint dev, float *temp, int *fanspeed) {
 }
 
 
-void nvml_print_devices() {
-    nvmlReturn_t ret;
-    uint devnum, dev;
-
-    ret = NVML_nvmlDeviceGetCount(&devnum);
+void nvml_print_devices()
+{
+    uint dev, devnum = 0;
+    nvmlReturn_t ret = NVML_nvmlDeviceGetCount(&devnum);
     if(ret != NVML_SUCCESS) {
         applog(LOG_ERR, "NVML: Device number query failed with code %s",
           NVML_nvmlErrorString(ret));
@@ -171,10 +205,9 @@ void nvml_print_devices() {
     }
 }
 
-void nvml_shutdown() {
-    nvmlReturn_t ret;
-
-    ret = NVML_nvmlShutdown();
+void nvml_shutdown()
+{
+    nvmlReturn_t ret = NVML_nvmlShutdown();
     if(ret != NVML_SUCCESS) {
         applog(LOG_ERR, "NVML: Unable to shut down");
         return;
@@ -190,7 +223,7 @@ void nvml_init() {
     opt_nonvml = true;
 }
 
-void nvml_gpu_temp_and_fanspeed(const int __unused, float *temp, int *fanspeed) {
+void nvml_gpu_temp_and_fanspeed(const unsigned int __unused, float *temp, int *fanspeed) {
     *temp = -1.0f;
     *fanspeed = -1;
 }
