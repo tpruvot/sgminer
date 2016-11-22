@@ -44,6 +44,7 @@ sgminer_SOURCES += driver-opencl.c driver-opencl.h
 sgminer_SOURCES += ocl.c ocl.h
 sgminer_SOURCES += findnonce.c findnonce.h
 sgminer_SOURCES += adl.c adl.h adl_functions.h
+sgminer_SOURCES += sysfs.c
 sgminer_SOURCES += nvml.c
 sgminer_SOURCES += pool.c pool.h
 sgminer_SOURCES += algorithm.c algorithm.h

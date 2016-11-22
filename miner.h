@@ -247,6 +247,12 @@ void nvml_print_devices();
 void nvml_shutdown();
 #endif
 
+#ifdef __linux__
+void sysfs_gpu_temp_and_fanspeed(const unsigned int, float *, int *);
+#else
+inline void sysfs_gpu_temp_and_fanspeed(const unsigned int, float *, int *) {}
+#endif
+
 /* Adding a device here will update all macros in the code that use
  * the *_PARSE_COMMANDS macros for each listed driver.
  */
@@ -587,6 +593,7 @@ struct cgpu_info {
   float temp;
   int cutofftemp;
 
+  bool has_sysfs;
   bool has_nvml;
   bool has_adl;
 

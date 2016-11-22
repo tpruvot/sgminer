@@ -1231,20 +1231,39 @@ static void reinit_opencl_device(struct cgpu_info *gpu)
 
 static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_info *gpu)
 {
-  if (gpu->has_adl) {
-#ifdef HAVE_ADL
+  float temp = 0;
+  int fanspeed = -1;
+  if (gpu->has_sysfs) {
     int gpuid = gpu->device_id;
-    float gt = gpu_temp(gpuid);
-    int gf = gpu_fanspeed(gpuid);
-    int gp;
 
-    if (gt != -1)
-      tailsprintf(buf, bufsiz, "%5.1fC ", gt);
+    sysfs_gpu_temp_and_fanspeed(gpuid, &temp, &fanspeed);
+
+    if(temp > 0.0)
+      tailsprintf(buf, bufsiz, "%5.1fC ", temp);
     else
       tailsprintf(buf, bufsiz, "       ");
-    if (gf != -1)
+
+    if(fanspeed > 0)
+      tailsprintf(buf, bufsiz, " FAN%3d%% ", fanspeed);
+    else
+      tailsprintf(buf, bufsiz, "        ");
+    tailsprintf(buf, bufsiz, "| ");
+  }
+  else if (gpu->has_adl) {
+#ifdef HAVE_ADL
+    int gpuid = gpu->device_id;
+    int gp;
+
+    temp = gpu_temp(gpuid);
+    fanspeed = gpu_fanspeed(gpuid);
+
+    if (temp != -1)
+      tailsprintf(buf, bufsiz, "%5.1fC ", temp);
+    else
+      tailsprintf(buf, bufsiz, "       ");
+    if (fanspeed != -1)
       // show invalid as 9999
-      tailsprintf(buf, bufsiz, "%4dRPM ", gf > 9999 ? 9999 : gf);
+      tailsprintf(buf, bufsiz, "%4dRPM ", fanspeed > 9999 ? 9999 : fanspeed);
     else if ((gp = gpu_fanpercent(gpuid)) != -1)
       tailsprintf(buf, bufsiz, "%3d%%    ", gp);
     else
@@ -1255,12 +1274,11 @@ static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_inf
   else if(!opt_nonvml && gpu->has_nvml) {
 #ifdef HAVE_NVML
     uint busid = gpu->pci_bus;
-    int fanspeed = 0;
-    float temp;
+    int gpuid = gpu->device_id;
 
     nvml_gpu_temp_and_fanspeed(busid, &temp, &fanspeed); // percent
 
-    if(temp > 0.0)
+    if(temp > 0.)
       tailsprintf(buf, bufsiz, "%5.1fC ", temp);
     else
       tailsprintf(buf, bufsiz, "       ");
@@ -1552,11 +1570,7 @@ struct device_drv opencl_drv = {
   /*.name = */      "GPU",
   /*.drv_detect = */    opencl_detect,
   /*.reinit_device = */   reinit_opencl_device,
-#ifdef HAVE_ADL
   /*.get_statline_before = */ get_opencl_statline_before,
-#else
-  NULL,
-#endif
   /*.get_statline = */    get_opencl_statline,
   /*.api_data = */    NULL,
   /*.get_stats = */   NULL,

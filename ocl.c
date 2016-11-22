@@ -246,6 +246,15 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     applog(LOG_INFO, "\t%i\t%s", i, pbuff[i]);
   }
 
+  if (!amd_platform) {
+    // for the RX...
+    char plat[256] = { 0 };
+    status = clGetPlatformInfo(platform, CL_PLATFORM_NAME, sizeof(plat), plat, NULL);
+    if (status == CL_SUCCESS) {
+      amd_platform = strstr(plat, "AMD");
+    }
+  }
+
   applog(LOG_INFO, "Selected %d: %s", gpu, pbuff[gpu]);
   strncpy(name, pbuff[gpu], nameSize);
   
@@ -316,6 +325,13 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     }
   }
 #endif
+
+  cgpu->has_sysfs = amd_platform && strcmp(name,"Ellesmere") == 0; // RX only for now..
+#ifndef __linux__
+  cgpu->has_sysfs = false;
+#endif
+  if (cgpu->has_sysfs)
+    applog(LOG_INFO, "sysfs monitoring enabled on GPU %s", name);
 
   /* Create binary filename based on parameters passed to opencl
    * compiler to ensure we only load a binary that matches what
