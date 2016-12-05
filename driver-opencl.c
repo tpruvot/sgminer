@@ -1502,8 +1502,29 @@ static int64_t opencl_scanhash(struct thr_info *thr, struct work *work,
    * than enough to prevent repeating work */
   work->blk.nonce += gpu->max_hashes;
 
+#ifndef WIN32
+  if (gpu->has_nvml) {
+    // nvidia: refresh wait time (1 to ensure init is done)
+    if ((gpu->scan_counter & 0xFF) == 1)
+      gpu->kernel_wait_us = -1;
+    gpu->scan_counter++;
+  }
+
+  if (gpu->kernel_wait_us > 0)
+    cgsleep_us(gpu->kernel_wait_us);
+#endif
+
   /* This finish flushes the readbuffer set with CL_FALSE in clEnqueueReadBuffer */
   clFinish(clState->commandQueue);
+
+  if (gpu->kernel_wait_us == -1) {
+    // refresh the wait time (req. for nvidia)
+    struct timeval tv_now;
+    cgtime(&tv_now);
+    gpu->kernel_wait_us = (int64_t) us_tdiff(&tv_now, &work->tv_work_start) - 1000;
+    if (gpu->kernel_wait_us < 1000) gpu->kernel_wait_us = 0;
+    //else applog(LOG_NOTICE, "adjust kernel wait time to %ld us", (long) gpu->kernel_wait_us);
+  }
 
   /* found entry is used as a counter to say how many nonces exist */
   if (thrdata->res[found]) {

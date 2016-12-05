@@ -593,6 +593,9 @@ struct cgpu_info {
   float temp;
   int cutofftemp;
 
+  int64_t kernel_wait_us;
+  int scan_counter;
+
   bool has_sysfs;
   bool has_nvml;
   bool has_adl;
