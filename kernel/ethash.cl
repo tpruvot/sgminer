@@ -385,7 +385,6 @@ __kernel void GenerateDAG(uint start, __global const uint16 *_Cache, __global ui
 	__global const Node *Cache = (__global const Node *) _Cache;
 	__global Node *DAG = (__global Node *) _DAG;
 	uint NodeIdx = start + get_global_id(0);
-	//if  (NodeIdx > DAG_SIZE) return;
 
 	Node DAGNode = Cache[NodeIdx % LIGHT_SIZE];
 

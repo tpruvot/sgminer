@@ -293,8 +293,8 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
   // Source: http://www.amd.com/us/Documents/GCN_Architecture_whitepaper.pdf
   clState->compute_shaders = compute_units << 6;
   applog(LOG_INFO, "Maximum work size for this GPU (%d) is %d.", gpu, clState->max_work_size);
-	applog(LOG_INFO, "Your GPU (#%d) has %d compute units, and all AMD cards in the 7 series or newer (GCN cards) \
-		have 64 shaders per compute unit - this means it has %d shaders.", gpu, compute_units, clState->compute_shaders);
+  applog(LOG_INFO, "Your GPU (#%d) has %d compute units, and all AMD cards in the 7 series or newer (GCN cards) "
+    "have 64 shaders per unit, this means it has %d shaders.", gpu, compute_units, clState->compute_shaders);
 
   status = clGetDeviceInfo(devices[gpu], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), (void *)&cgpu->max_alloc, NULL);
   if (status != CL_SUCCESS) {
@@ -332,6 +332,9 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
 #endif
   if (cgpu->has_sysfs)
     applog(LOG_INFO, "sysfs monitoring enabled on GPU %s", name);
+
+  if (!cgpu->name)
+    cgpu->name = strdup(name);
 
   /* Create binary filename based on parameters passed to opencl
    * compiler to ensure we only load a binary that matches what

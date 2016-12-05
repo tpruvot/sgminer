@@ -149,7 +149,6 @@ static bool opt_lowmem;
 static bool opt_morenotices;
 uint32_t eth_nonce;
 pthread_mutex_t eth_nonce_lock;
-uint32_t EthereumEpochNumber = 0;
 cglock_t EthCacheLock[2];
 uint8_t* EthCache[2];
 bool opt_autofan;
@@ -7297,6 +7296,7 @@ struct work *get_work(struct thr_info *thr, const int thr_id)
   applog(LOG_DEBUG, "[THR%d] Got work from get queue", thr_id);
 
   work->thr_id = thr_id;
+  work->thr = thr;
   thread_reportin(thr);
   work->mined = true;
   work->device_diff = MIN(thr->cgpu->drv->max_diff, work->work_difficulty);
