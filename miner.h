@@ -245,7 +245,9 @@ static inline int fsync (int fd)
 #include "NVML/nvml.h"
 #endif
 void nvml_init();
+void nvml_gpu_clocks(const unsigned int, unsigned int *gpu, unsigned int *mem);
 void nvml_gpu_temp_and_fanspeed(const unsigned int, float *, int *);
+void nvml_gpu_usage(const unsigned int, unsigned int *w, unsigned int *limit);
 void nvml_print_devices();
 void nvml_shutdown();
 #endif

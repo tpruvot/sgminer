@@ -796,6 +796,29 @@ retry: // TODO: refactor
       }
     }
 #endif
+#ifdef HAVE_NVML
+    if (gpus[gpu].has_nvml) {
+      char logline[255] = "";
+      uint busid = gpus[gpu].pci_bus;
+      uint engineclock, memclock;
+      uint watts, limit;
+
+      tailsprintf(logline, sizeof(logline), "BUS %x: %s  ", busid, gpus[gpu].name);
+
+      nvml_gpu_clocks(busid, &engineclock, &memclock);
+      if (engineclock)
+          tailsprintf(logline, sizeof(logline), "E: %4u MHz ", engineclock);
+      if (memclock)
+          tailsprintf(logline, sizeof(logline), "M: %4u Mhz  ", memclock);
+
+      nvml_gpu_usage(busid, &watts, &limit);
+      if (watts)
+          tailsprintf(logline, sizeof(logline), "W: %uW L: %uW ", watts, limit);
+
+      tailsprintf(logline, sizeof(logline), "\n");
+      _wlog(logline);
+    }
+#endif
     wlog("Last initialised: %s\n", cgpu->init);
 
     rd_lock(&mining_thr_lock);
