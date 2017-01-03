@@ -62,7 +62,7 @@ void init_Nhash_contexts()
  * Encode a length len/4 vector of (uint32_t) into a length len vector of
  * (unsigned char) in big-endian form.  Assumes len is a multiple of 4.
  */
-static inline void
+inline void
 be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len)
 {
   uint32_t i;
@@ -72,10 +72,7 @@ be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len)
 }
 
 
-#ifdef __APPLE_CC__
-static
-#endif
-inline void talkhash(void *state, const void *input)
+static void talkhash(void *state, const void *input)
 {
   init_Nhash_contexts();
 
