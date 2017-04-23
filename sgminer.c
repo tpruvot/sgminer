@@ -6156,6 +6156,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
   cg_wlock(&pool->data_lock);
 
   if (pool->algorithm.type == ALGO_DECRED) {
+    memcpy(&work->data[176], &pool->coinbase[pool->nonce2_offset + pool->n2size], 4);
     pool->swork.cb_len = 32;
     work->nonce2 = pool->nonce2++;
   } else {
