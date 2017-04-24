@@ -6393,6 +6393,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
     // random data + thr_id in 37, data[38] stratum id should be kept from extranonce subscribe
     data[36] = work->nonce2;
     data[37] = ((rand() * 4) << 8) | work->thr_id;
+    memcpy(&data[44], &pool->coinbase[pool->nonce2_offset + pool->n2size], 4);
     //applog_hex(work->data, 180);
   }
   else {
