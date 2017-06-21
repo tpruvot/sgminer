@@ -43,6 +43,7 @@
 #include "algorithm/ethash.h"
 #include "algorithm/sibcoin.h"
 #include "algorithm/skein2.h"
+#include "algorithm/tribus.h"
 #include "algorithm/veltor.h"
 
 #include "compat.h"
@@ -79,6 +80,7 @@ const char *algorithm_type_str[] = {
   "Vanilla",
   "Sibcoin",
   "Skein2",
+  "tribus",
   "Veltor",
   "Ethash",
   NULL
@@ -471,6 +473,32 @@ static cl_int queue_sibcoin_kernel(struct __clState *clState, struct _dev_blk_ct
   // echo - search11
   num = 0;
   CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->outputBuffer);
+  CL_SET_ARG(le_target);
+
+  return status;
+}
+
+static cl_int queue_tribus_kernel(struct __clState *clState, struct _dev_blk_ctx *blk, __maybe_unused cl_uint threads)
+{
+  cl_kernel *kernel;
+  unsigned int num;
+  cl_ulong le_target;
+  cl_int status = 0;
+
+  le_target = *(cl_ulong *)(blk->work->device_target + 24);
+  flip80(clState->cldata, blk->work->data);
+  status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 80, clState->cldata, 0, NULL, NULL);
+
+  // jh80 + keccak - search()
+  kernel = &clState->kernel;
+  num = 0;
+  CL_SET_ARG(clState->CLbuffer0);
+  CL_SET_ARG(clState->padbuffer8);
+  // echo - search1()
+  kernel = clState->extra_kernels;
+  num = 0;
+  CL_SET_ARG(clState->padbuffer8);
   CL_SET_ARG(clState->outputBuffer);
   CL_SET_ARG(le_target);
 
@@ -1321,6 +1349,8 @@ static algorithm_settings_t algos[] = {
   { "sibcoin-mod", ALGO_SIBCOIN, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 11, 8 * 16 * 4194304, 0, sibcoin_regenhash, NULL, queue_sibcoin_kernel, gen_hash, append_x11_compiler_options },
 
   { "skein2", ALGO_SKEIN2, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 8 * 16 * 4194304, 0, skein2_regenhash, NULL, queue_skein2_kernel, gen_hash, append_x11_compiler_options },
+
+  { "tribus", ALGO_TRIBUS, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 8 * 16 * 4194304, 0, tribus_regenhash, NULL, queue_tribus_kernel, gen_hash, append_x11_compiler_options },
 
   { "veltor", ALGO_VELTOR, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 3, 8 * 16 * 4194304, 0, veltor_regenhash, NULL, queue_veltor_kernel, gen_hash, append_x11_compiler_options },
 

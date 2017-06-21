@@ -41,6 +41,8 @@ lib/string.h
 lib/stdint.h
 lib/warn-on-use.h
 
+libtool
+ltmain.sh
 mkinstalldirs
 .dirstamp
 m4/

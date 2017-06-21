@@ -280,6 +280,7 @@
     <ClCompile Include="..\algorithm\pluck.c" />
     <ClCompile Include="..\algorithm\sibcoin.c" />
     <ClCompile Include="..\algorithm\skein2.c" />
+    <ClCompile Include="..\algorithm\tribus.c" />
     <ClCompile Include="..\algorithm\veltor.c" />
     <ClCompile Include="..\algorithm\sponge.c" />
     <ClCompile Include="..\algorithm\talkcoin.c" />
