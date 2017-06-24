@@ -248,6 +248,9 @@
     <ClCompile Include="..\algorithm\ethash-sha3.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>
+    <ClCompile Include="..\algorithm\tribus.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
     <ClCompile Include="..\nvml.c">
       <Filter>Source Files</Filter>
     </ClCompile>

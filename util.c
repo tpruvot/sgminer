@@ -1905,6 +1905,132 @@ static bool parse_reconnect(struct pool *pool, json_t *val)
   return true;
 }
 
+static bool json_object_set_error(json_t *result, int code, const char *msg)
+{
+  json_t *val = json_object();
+  json_object_set_new(val, "code", json_integer(code));
+  json_object_set_new(val, "message", json_string(msg));
+  return json_object_set_new(result, "error", val) != -1;
+}
+
+extern double total_secs;
+extern char driver_version[64];
+
+/* allow to report algo/device perf to the pool for algo stats */
+static bool stratum_benchdata(json_t *result, json_t *params, int thr_id)
+{
+  char algo[64] = { 0 };
+  char pciid[32] = { 0 }, driver[64] = { 0 };
+  char arch[8] = { 0 };
+  char *card;
+  char os[8];
+  uint engineclock = 0, memclock = 0;
+  uint defGpuclock = 0, defMemclock = 0;
+  uint watts = 0, plimit = 0;
+  int pid = 0, vid = 0, spid = 0, svid = 0;
+  double khashes = 0.;
+  struct cgpu_info *cgpu = get_thr_cgpu(thr_id);
+  json_t *val;
+
+  if (!cgpu/*|| !opt_stratum_stats*/) return false;
+
+#ifdef WIN32
+# if (defined(_M_X64) || defined(__x86_64__))
+  strcpy(os, "win64");
+# else
+  strcpy(os, "win32");
+# endif
+#elif defined(__APPLE__)
+  strcpy(os, "macos");
+#else
+  strcpy(os, "linux");
+#endif
+
+#ifdef HAVE_NVML
+  //watts = (cgpu->gpu_power >= 1000) ? cgpu->gpu_power / 1000 : 0; // ignore nvapi %
+  //plimit = device_plimit[dev_id] > 0 ? device_plimit[dev_id] : 0;
+  nvml_gpu_ids(cgpu->pci_bus, &vid, &pid, &svid, &spid);
+  if (spid && svid) { pid = spid; vid = svid; }
+  nvml_gpu_clocks(cgpu->pci_bus, &engineclock, &memclock);
+  if (engineclock) cgpu->gpu_engine = engineclock;
+  if (memclock) cgpu->gpu_memclock = memclock;
+  nvml_gpu_defclocks(cgpu->pci_bus, &defGpuclock, &defMemclock);
+  if (!defGpuclock) defGpuclock = engineclock;
+  if (!defMemclock) defMemclock = memclock;
+  nvml_gpu_usage(cgpu->pci_bus, &watts, &plimit);
+  if (1.2 * watts < plimit) plimit = 0; // under limits, ignore
+#endif
+
+  strcpy(algo, cgpu->algorithm.name);
+  card = cgpu->name;
+
+  khashes = cgpu->total_mhashes / total_secs;
+  if (cgpu->rolling >= 1) khashes *= 1000; // if MH/s
+
+  sprintf(pciid, "%04hx:%04hx", vid, pid);
+  //sprintf(arch, "%d", (int)cgpu->gpu_arch);
+  //if (cuda_arch[dev_id] > 0 && cuda_arch[dev_id] != cgpu->gpu_arch) {
+      // if binary was not compiled for the highest cuda arch, add it
+  //  snprintf(arch, 8, "%d@%d", (int)cgpu->gpu_arch, cuda_arch[dev_id]);
+  //}
+  if (strlen(driver_version) > 0)
+    snprintf(driver, sizeof(driver), "%s", driver_version);
+  else
+    sprintf(driver, "OpenCL %1.1f", cgpu->cl_version);
+  driver[63] = '\0';
+
+  val = json_object();
+  json_object_set_new(val, "algo", json_string(algo));
+  json_object_set_new(val, "type", json_string("gpu"));
+  json_object_set_new(val, "device", json_string(card));
+  json_object_set_new(val, "vendorid", json_string(pciid));
+  json_object_set_new(val, "arch", json_string(arch));
+  json_object_set_new(val, "freq", json_integer(defGpuclock));
+  json_object_set_new(val, "memf", json_integer(defMemclock));
+  json_object_set_new(val, "curr_freq", json_integer(cgpu->gpu_engine));
+  json_object_set_new(val, "curr_memf", json_integer(cgpu->gpu_memclock));
+  json_object_set_new(val, "power", json_integer(watts));
+  json_object_set_new(val, "plimit", json_integer(plimit));
+  json_object_set_new(val, "khashes", json_real(khashes));
+  json_object_set_new(val, "intensity", json_real(cgpu->intensity));
+  json_object_set_new(val, "throughput", json_integer(cgpu->max_hashes));
+  json_object_set_new(val, "client", json_string(PACKAGE_NAME "/" PACKAGE_VERSION));
+  json_object_set_new(val, "os", json_string(os));
+  json_object_set_new(val, "driver", json_string(driver));
+
+  json_object_set_new(result, "result", val);
+
+  return true;
+}
+
+static bool stratum_get_stats(struct pool *pool, json_t *id, json_t *params)
+{
+  char *s;
+  json_t *val;
+  bool ret;
+
+  if (!id || json_is_null(id))
+    return false;
+
+  val = json_object();
+  json_object_set(val, "id", id);
+
+  ret = stratum_benchdata(val, params, 0); // first thread/dev only
+
+  if (!ret) {
+    json_object_set_error(val, 1, "disabled"); //EPERM
+  } else {
+    json_object_set_new(val, "error", json_null());
+  }
+
+  s = json_dumps(val, 0);
+  ret = stratum_send(pool, s, (ssize_t) strlen(s));
+  json_decref(val);
+  free(s);
+
+  return ret;
+}
+
 static bool send_version(struct pool *pool, json_t *val)
 {
   char s[RBUFSIZE];
@@ -1914,7 +2040,7 @@ static bool send_version(struct pool *pool, json_t *val)
     return false;
 
   sprintf(s, "{\"id\": %d, \"result\": \""PACKAGE"/"CGMINER_VERSION"\", \"error\": null}", id);
-  if (!stratum_send(pool, s, strlen(s)))
+  if (!stratum_send(pool, s, (ssize_t) strlen(s)))
     return false;
 
   return true;
@@ -1936,6 +2062,7 @@ static bool show_message(struct pool *pool, json_t *val)
 bool parse_method(struct pool *pool, char *s)
 {
   json_t *val = NULL, *method, *err_val = NULL, *params;
+  json_t *id;
   json_error_t err;
   bool ret = false;
   char *buf;
@@ -1955,6 +2082,7 @@ bool parse_method(struct pool *pool, char *s)
 
   err_val = json_object_get(val, "error");
   params = json_object_get(val, "params");
+  id = json_object_get(val, "id");
 
   if (err_val && !json_is_null(err_val)) {
     char *ss;
@@ -2008,6 +2136,11 @@ bool parse_method(struct pool *pool, char *s)
   }
 
   if (!strncasecmp(buf, "client.show_message", 19) && show_message(pool, params)) {
+    ret = true;
+    goto done;
+  }
+
+  if (!strncasecmp(buf, "client.get_stats", 16) && stratum_get_stats(pool, id, params)) {
     ret = true;
     goto done;
   }

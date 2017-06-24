@@ -41,6 +41,7 @@ static nvmlReturn_t (*NVML_nvmlDeviceGetPciInfo)(nvmlDevice_t, nvmlPciInfo_t *);
 static nvmlReturn_t (*NVML_nvmlDeviceGetTemperature)(nvmlDevice_t, nvmlTemperatureSensors_t, uint *);
 static nvmlReturn_t (*NVML_nvmlDeviceGetFanSpeed)(nvmlDevice_t, uint *);
 static nvmlReturn_t (*NVML_nvmlDeviceGetClockInfo)(nvmlDevice_t, nvmlClockType_t, unsigned int *);
+static nvmlReturn_t (*NVML_nvmlDeviceGetDefaultApplicationsClock)(nvmlDevice_t, nvmlClockType_t, unsigned int *);
 static nvmlReturn_t (*NVML_nvmlDeviceGetPowerManagementLimit)(nvmlDevice_t, uint *);
 static nvmlReturn_t (*NVML_nvmlDeviceGetPowerUsage)(nvmlDevice_t, uint *);		
 static nvmlReturn_t (*NVML_nvmlShutdown)();
@@ -100,6 +101,8 @@ void nvml_init() {
       dlsym(hDLL, "nvmlDeviceGetFanSpeed");
     NVML_nvmlDeviceGetClockInfo = (nvmlReturn_t (*)(nvmlDevice_t, nvmlClockType_t, uint *)) \
       dlsym(hDLL, "nvmlDeviceGetClockInfo");
+    NVML_nvmlDeviceGetDefaultApplicationsClock = (nvmlReturn_t (*)(nvmlDevice_t, nvmlClockType_t, uint *)) \
+      dlsym(hDLL, "nvmlDeviceGetDefaultApplicationsClock");
     NVML_nvmlDeviceGetPowerManagementLimit = (nvmlReturn_t (*)(nvmlDevice_t, uint *)) \
       dlsym(hDLL, "nvmlDeviceGetPowerManagementLimit");
     NVML_nvmlDeviceGetPowerUsage = (nvmlReturn_t (*)(nvmlDevice_t, uint *)) \
@@ -193,6 +196,29 @@ void nvml_gpu_clocks(const unsigned int busid, unsigned int *gpuClock, unsigned 
     *memClock = (ret != NVML_SUCCESS) ? 0 : clock;
 }
 
+void nvml_gpu_defclocks(const unsigned int busid, unsigned int *gpuClock, unsigned int *memClock)
+{
+    nvmlReturn_t ret;
+    nvmlDevice_t gpu = NULL;
+    unsigned int clock = 0;
+    *gpuClock = 0; *memClock = 0;
+
+    uint dev = nvml_gpu_id(busid);
+    if (dev == UINT_MAX || !NVML_nvmlDeviceGetDefaultApplicationsClock) {
+        return;
+    }
+
+    ret = NVML_nvmlDeviceGetHandleByIndex(dev, &gpu);
+    if (ret != NVML_SUCCESS || !gpu) {
+        return;
+    }
+
+	ret = NVML_nvmlDeviceGetDefaultApplicationsClock(gpu, NVML_CLOCK_GRAPHICS, &clock);
+    *gpuClock = (ret != NVML_SUCCESS) ? 0 : clock;
+	ret = NVML_nvmlDeviceGetDefaultApplicationsClock(gpu, NVML_CLOCK_MEM, &clock);
+    *memClock = (ret != NVML_SUCCESS) ? 0 : clock;
+}
+
 void nvml_gpu_usage(const unsigned int busid, unsigned int *watts, unsigned int *limit)
 {
     nvmlReturn_t ret;
@@ -214,6 +240,31 @@ void nvml_gpu_usage(const unsigned int busid, unsigned int *watts, unsigned int 
     *watts = (ret != NVML_SUCCESS) ? 0 : mwatts/1000;
     ret = NVML_nvmlDeviceGetPowerManagementLimit(gpu, &plimit);
     *limit = (ret != NVML_SUCCESS) ? 0 : plimit/1000;
+}
+
+void nvml_gpu_ids(const unsigned int busid, int *vid, int *pid, int *svid, int *spid)
+{
+    nvmlReturn_t ret;
+    nvmlDevice_t gpu = NULL;
+    nvmlPciInfo_t pci = { 0 };
+    *vid = *pid = 0;
+    if (svid ) *svid = *spid = 0;
+
+    uint dev = nvml_gpu_id(busid);
+    if (dev == UINT_MAX) {
+        return;
+    }
+    ret = NVML_nvmlDeviceGetHandleByIndex(dev, &gpu);
+    if (ret != NVML_SUCCESS || !gpu) return;
+    ret = NVML_nvmlDeviceGetPciInfo(gpu, &pci);
+    if (ret != NVML_SUCCESS) return;
+    if (pci.bus != busid) return;
+    *vid = pci.pciDeviceId & 0xFFFF;
+    *pid = pci.pciDeviceId >> 16;
+    if (svid) {
+        *svid = pci.pciSubSystemId & 0xFFFF;
+        *spid = pci.pciSubSystemId >> 16;
+    }
 }
 
 void nvml_print_devices()

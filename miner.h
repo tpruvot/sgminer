@@ -246,6 +246,8 @@ static inline int fsync (int fd)
 #endif
 void nvml_init();
 void nvml_gpu_clocks(const unsigned int, unsigned int *gpu, unsigned int *mem);
+void nvml_gpu_defclocks(const unsigned int, unsigned int *gpu, unsigned int *mem);
+void nvml_gpu_ids(const unsigned int, int *vid, int *pid, int *svid, int *spid);
 void nvml_gpu_temp_and_fanspeed(const unsigned int, float *, int *);
 void nvml_gpu_usage(const unsigned int, unsigned int *w, unsigned int *limit);
 void nvml_print_devices();
@@ -607,7 +609,9 @@ struct cgpu_info {
 
 #ifdef HAVE_ADL
   struct gpu_adl adl;
+#endif
 
+#if defined(HAVE_NVML) || defined(HAVE_ADL)
   int gpu_engine;
   int min_engine;
   int gpu_fan;
@@ -617,6 +621,8 @@ struct cgpu_info {
   int gpu_powertune;
   float gpu_vddc;
 #endif
+
+  float cl_version;
 
   double diff1;
   double diff_accepted;
@@ -1608,6 +1614,7 @@ extern void free_work(struct work *work);
 extern struct work *copy_work_noffset(struct work *base_work, int noffset);
 #define copy_work(work_in) copy_work_noffset(work_in, 0)
 extern struct cgpu_info *get_devices(int id);
+extern struct cgpu_info *get_thr_cgpu(int thr_id);
 
 extern char *set_int_0_to_9999(const char *arg, int *i);
 extern char *set_int_1_to_65535(const char *arg, int *i);

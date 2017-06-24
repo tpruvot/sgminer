@@ -47,6 +47,8 @@ extern bool adl_active;
 extern bool nvml_active;
 #endif
 
+char driver_version[64] = { 0 };
+
 /* FIXME: only here for global config vars, replace with configuration.h
  * or similar as soon as config is in a struct instead of littered all
  * over the global namespace.
@@ -167,6 +169,10 @@ static float get_opencl_version(cl_device_id device)
   status = clGetDeviceInfo(device, CL_DEVICE_VERSION, 1024, (void *)devoclver, NULL);
   if (status != CL_SUCCESS) {
     quit(1, "Failed to clGetDeviceInfo when trying to get CL_DEVICE_VERSION");
+  }
+  if (sscanf(devoclver, "OpenCL %f", &version) && version >= 1.0) {
+    snprintf(driver_version, 63, "%s", devoclver);
+    return version;
   }
   find = strstr(devoclver, "OpenCL 1.0");
   if (!find) {
@@ -751,6 +757,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
   build_data->kernel_path = (*opt_kernel_path) ? opt_kernel_path : NULL;
   build_data->work_size = clState->wsize;
   build_data->opencl_version = get_opencl_version(devices[gpu]);
+  cgpu->cl_version = build_data->opencl_version;
 
   strcpy(build_data->binary_filename, filename);
   build_data->binary_filename[strlen(filename) - 3] = 0x00; // And one NULL terminator, cutting off the .cl suffix.

@@ -431,7 +431,7 @@ static void applog_and_exit(const char *fmt, ...)
 static pthread_mutex_t sharelog_lock;
 static FILE *sharelog_file = NULL;
 
-static struct cgpu_info *get_thr_cgpu(int thr_id)
+struct cgpu_info *get_thr_cgpu(int thr_id)
 {
   struct cgpu_info *cgpu = NULL;
   rd_lock(&mining_thr_lock);

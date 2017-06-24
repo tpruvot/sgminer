@@ -1350,7 +1350,7 @@ static algorithm_settings_t algos[] = {
 
   { "skein2", ALGO_SKEIN2, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 8 * 16 * 4194304, 0, skein2_regenhash, NULL, queue_skein2_kernel, gen_hash, append_x11_compiler_options },
 
-  { "tribus", ALGO_TRIBUS, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 8 * 16 * 4194304, 0, tribus_regenhash, NULL, queue_tribus_kernel, gen_hash, append_x11_compiler_options },
+  { "tribus", ALGO_TRIBUS, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 4 * 16 * 4194304, 0, tribus_regenhash, NULL, queue_tribus_kernel, gen_hash, append_x11_compiler_options },
 
   { "veltor", ALGO_VELTOR, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 3, 8 * 16 * 4194304, 0, veltor_regenhash, NULL, queue_veltor_kernel, gen_hash, append_x11_compiler_options },
 
