@@ -2005,9 +2005,9 @@ static bool stratum_benchdata(json_t *result, json_t *params, int thr_id)
 
 static bool stratum_get_stats(struct pool *pool, json_t *id, json_t *params)
 {
-  char *s;
   json_t *val;
-  bool ret;
+  bool ret = false;
+  char *s, buf[RBUFSIZE];
 
   if (!id || json_is_null(id))
     return false;
@@ -2024,10 +2024,12 @@ static bool stratum_get_stats(struct pool *pool, json_t *id, json_t *params)
   }
 
   s = json_dumps(val, 0);
-  ret = stratum_send(pool, s, (ssize_t) strlen(s));
   json_decref(val);
-  free(s);
-
+  if (s) {
+    snprintf(buf, RBUFSIZE, "%s", s);
+    free(s);
+    ret = stratum_send(pool, buf, (ssize_t)strlen(buf));
+  }
   return ret;
 }
 
