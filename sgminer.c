@@ -90,6 +90,7 @@ bool opt_realquiet;
 bool opt_loginput;
 bool opt_compact;
 bool opt_incognito;
+bool opt_bench_stats = false;
 
 // remote config options...
 int opt_remoteconf_retry = 3; // number of retries

@@ -2003,6 +2003,8 @@ static bool stratum_benchdata(json_t *result, json_t *params, int thr_id)
   return true;
 }
 
+extern bool opt_bench_stats;
+
 static bool stratum_get_stats(struct pool *pool, json_t *id, json_t *params)
 {
   json_t *val;
@@ -2015,7 +2017,8 @@ static bool stratum_get_stats(struct pool *pool, json_t *id, json_t *params)
   val = json_object();
   json_object_set(val, "id", id);
 
-  ret = stratum_benchdata(val, params, 0); // first thread/dev only
+  if (opt_bench_stats)
+    ret = stratum_benchdata(val, params, 0); // first thread/dev only
 
   if (!ret) {
     json_object_set_error(val, 1, "disabled"); //EPERM
