@@ -101,6 +101,7 @@ cl_program build_opencl_kernel(build_kernel_data *data, const char *filename)
     char *sz_log = (char *)malloc(log_size + 1);
     status = clGetProgramBuildInfo(program, *data->device, CL_PROGRAM_BUILD_LOG, log_size, sz_log, NULL);
     sz_log[log_size] = '\0';
+    if (log_size > 512) log_size = 512; // applogsiz is limited, strip it...
     applogsiz(LOG_ERR, log_size, "%s", sz_log);
     free(sz_log);
     goto out;

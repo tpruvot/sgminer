@@ -481,14 +481,19 @@ static cl_int queue_sibcoin_kernel(struct __clState *clState, struct _dev_blk_ct
 
 static cl_int queue_tribus_kernel(struct __clState *clState, struct _dev_blk_ctx *blk, __maybe_unused cl_uint threads)
 {
+  uint32_t *midstate = (uint32_t*)(&blk->work->midstate); // 128 bytes
+  uint32_t *data_end = (uint32_t*)(&blk->work->data[64]); //  16 bytes (end of data)
   cl_kernel *kernel;
-  unsigned int num;
   cl_ulong le_target;
   cl_int status = 0;
+  unsigned int num;
 
   le_target = *(cl_ulong *)(blk->work->device_target + 24);
-  flip80(clState->cldata, blk->work->data);
-  status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 80, clState->cldata, 0, NULL, NULL);
+  memcpy(clState->cldata, blk->work->midstate, 128);
+  for (int i = 0; i < 3; i++)
+    ((uint32_t*)clState->cldata)[32 + i] = swab32(data_end[i]);
+
+  status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 128+16, clState->cldata, 0, NULL, NULL);
 
   // jh80 + keccak - search()
   kernel = &clState->kernel;
@@ -1350,7 +1355,7 @@ static algorithm_settings_t algos[] = {
 
   { "skein2", ALGO_SKEIN2, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 8 * 16 * 4194304, 0, skein2_regenhash, NULL, queue_skein2_kernel, gen_hash, append_x11_compiler_options },
 
-  { "tribus", ALGO_TRIBUS, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 4 * 16 * 4194304, 0, tribus_regenhash, NULL, queue_tribus_kernel, gen_hash, append_x11_compiler_options },
+  { "tribus", ALGO_TRIBUS, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 1, 4 * 16 * 4194304, 0, tribus_regenhash, precalc_hash_tribus, queue_tribus_kernel, gen_hash, append_x11_compiler_options },
 
   { "veltor", ALGO_VELTOR, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 3, 8 * 16 * 4194304, 0, veltor_regenhash, NULL, queue_veltor_kernel, gen_hash, append_x11_compiler_options },
 

@@ -356,6 +356,7 @@
     <ClInclude Include="..\algorithm\sponge.h" />
     <ClInclude Include="..\algorithm\sysendian.h" />
     <ClInclude Include="..\algorithm\talkcoin.h" />
+    <ClInclude Include="..\algorithm\tribus.h" />
     <ClInclude Include="..\algorithm\whirlpoolx.h" />
     <ClInclude Include="..\algorithm\x14.h" />
     <ClInclude Include="..\algorithm\fresh.h" />

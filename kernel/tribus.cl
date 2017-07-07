@@ -1,5 +1,5 @@
 /*
- * TRIBUS kernel implementation.
+ * TRIBUS kernel implementation v2 (with midstate)
  *
  * ==========================(LICENSE BEGIN)============================
  *
@@ -89,70 +89,58 @@ typedef int sph_s32;
 #define SHL(x, n) ((x) << (n))
 #define SHR(x, n) ((x) >> (n))
 
-#if 0
-#define CONST_EXP2 \
-  q[i+0] + SPH_ROTL64(q[i+1], 5)  + q[i+2] + SPH_ROTL64(q[i+3], 11) + \
-  q[i+4] + SPH_ROTL64(q[i+5], 27) + q[i+6] + SPH_ROTL64(q[i+7], 32) + \
-  q[i+8] + SPH_ROTL64(q[i+9], 37) + q[i+10] + SPH_ROTL64(q[i+11], 43) + \
-  q[i+12] + SPH_ROTL64(q[i+13], 53) + (SHR(q[i+14],1) ^ q[i+14]) + (SHR(q[i+15],2) ^ q[i+15])
-#endif
-
 typedef union {
-  unsigned char h1[80];
-  uint h4[20];
-  ulong h8[10];
+  unsigned char h1[64];
+  uint h4[16];
+  ulong h8[8];
 } hash_t;
 
+typedef union {
+  unsigned char h1[16];
+  uint  h4[4];
+  ulong h8[2];
+} hash16_t;
+
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void search(__global unsigned char* block, __global hash_t* hashes)
+__kernel void search(__global sph_u64 *midstate, __global hash_t* hashes)
 {
   uint gid = get_global_id(0);
   __global hash_t *out = &(hashes[gid-get_global_offset(0)]);
 
-  hash_t hash;
-  #pragma unroll
-  for (int i = 0; i < 10; i++)
-    hash.h8[i] = DEC64LE(&block[i*8]); // data seems already swapped
-  hash.h4[19] = gid;
+  // jh512 midstate
+  sph_u64 h0h = DEC64LE(&midstate[0]);
+  sph_u64 h0l = DEC64LE(&midstate[1]);
+  sph_u64 h1h = DEC64LE(&midstate[2]);
+  sph_u64 h1l = DEC64LE(&midstate[3]);
+  sph_u64 h2h = DEC64LE(&midstate[4]);
+  sph_u64 h2l = DEC64LE(&midstate[5]);
+  sph_u64 h3h = DEC64LE(&midstate[6]);
+  sph_u64 h3l = DEC64LE(&midstate[7]);
 
-  // jh512 80 - by tpruvot
+  sph_u64 h4h = DEC64LE(&midstate[0 + 8]);
+  sph_u64 h4l = DEC64LE(&midstate[1 + 8]);
+  sph_u64 h5h = DEC64LE(&midstate[2 + 8]);
+  sph_u64 h5l = DEC64LE(&midstate[3 + 8]);
+  sph_u64 h6h = DEC64LE(&midstate[4 + 8]);
+  sph_u64 h6l = DEC64LE(&midstate[5 + 8]);
+  sph_u64 h7h = DEC64LE(&midstate[6 + 8]);
+  sph_u64 h7l = DEC64LE(&midstate[7 + 8]);
 
-  sph_u64 h0h = C64e(0x6fd14b963e00aa17), h0l = C64e(0x636a2e057a15d543);
-  sph_u64 h1h = C64e(0x8a225e8d0c97ef0b), h1l = C64e(0xe9341259f2b3c361);
-  sph_u64 h2h = C64e(0x891da0c1536f801e), h2l = C64e(0x2aa9056bea2b6d80);
-  sph_u64 h3h = C64e(0x588eccdb2075baa6), h3l = C64e(0xa90f3a76baf83bf7);
-  sph_u64 h4h = C64e(0x0169e60541e34a69), h4l = C64e(0x46b58a8e2e6fe65a);
-  sph_u64 h5h = C64e(0x1047a7d0c1843c24), h5l = C64e(0x3b6e71b12d5ac199);
-  sph_u64 h6h = C64e(0xcf57f6ec9db1f856), h6l = C64e(0xa706887c5716b156);
-  sph_u64 h7h = C64e(0xe3c2fcdfe68517fb), h7l = C64e(0x545a4678cc8cdd4b);
+  // end of input data with nonce
+  hash16_t hash;
+  hash.h8[0] = DEC64LE(&midstate[16]);
+  hash.h8[1] = DEC64LE(&midstate[17]);
+  hash.h4[3] = gid;
+
   sph_u64 tmp;
 
-  // Round 1 (64 first bytes)
+  // Round 2 (16 bytes with nonce)
   h0h ^= hash.h8[0];
   h0l ^= hash.h8[1];
-  h1h ^= hash.h8[2];
-  h1l ^= hash.h8[3];
-  h2h ^= hash.h8[4];
-  h2l ^= hash.h8[5];
-  h3h ^= hash.h8[6];
-  h3l ^= hash.h8[7];
+  h1h ^= 0x80U;
   E8;
   h4h ^= hash.h8[0];
   h4l ^= hash.h8[1];
-  h5h ^= hash.h8[2];
-  h5l ^= hash.h8[3];
-  h6h ^= hash.h8[4];
-  h6l ^= hash.h8[5];
-  h7h ^= hash.h8[6];
-  h7l ^= hash.h8[7];
-
-  // Round 2 (16 bytes with nonce)
-  h0h ^= hash.h8[8];
-  h0l ^= hash.h8[9];
-  h1h ^= 0x80U;
-  E8;
-  h4h ^= hash.h8[8];
-  h4l ^= hash.h8[9];
   h5h ^= 0x80U;
 
   // Round 3 (close, 640 bits input)

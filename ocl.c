@@ -958,6 +958,10 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     clState->DAG = clState->EthCache = NULL;
   }
 
+  if (algorithm->type == ALGO_TRIBUS) {
+    readbufsize = 128 + 16; // midstate + endofdata (16)
+  }
+
   applog(LOG_DEBUG, "Using read buffer sized %lu", (unsigned long)readbufsize);
   clState->CLbuffer0 = clCreateBuffer(clState->context, CL_MEM_READ_ONLY, readbufsize, NULL, &status);
   if (status != CL_SUCCESS) {

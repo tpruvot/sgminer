@@ -1492,7 +1492,7 @@ struct pool {
 
 struct work {
   unsigned char data[192];
-  unsigned char midstate[32];
+  unsigned char midstate[128];
   unsigned char target[32];
   unsigned char seedhash[32];
   unsigned char hash[32];
