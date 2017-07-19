@@ -66,6 +66,7 @@ sgminer_SOURCES += algorithm/groestlcoin.c algorithm/groestlcoin.h
 sgminer_SOURCES += algorithm/sifcoin.c algorithm/sifcoin.h
 sgminer_SOURCES += algorithm/sibcoin.c algorithm/sibcoin.h
 sgminer_SOURCES += algorithm/skein2.c algorithm/skein2.h
+sgminer_SOURCES += algorithm/skunk.c algorithm/skunk.h
 sgminer_SOURCES += algorithm/tribus.c algorithm/tribus.h
 sgminer_SOURCES += algorithm/veltor.c algorithm/veltor.h
 sgminer_SOURCES += algorithm/twecoin.c algorithm/twecoin.h

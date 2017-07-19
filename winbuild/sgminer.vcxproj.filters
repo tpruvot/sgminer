@@ -242,6 +242,9 @@
     <ClCompile Include="..\algorithm\ethash.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>
+    <ClCompile Include="..\algorithm\skunk.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
     <ClCompile Include="..\algorithm\tribus.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>
