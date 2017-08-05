@@ -991,7 +991,7 @@ void cgtimer_sub(cgtimer_t *a, cgtimer_t *b, cgtimer_t *res)
 }
 #endif /* WIN32 */
 
-#ifdef CLOCK_MONOTONIC /* Essentially just linux */
+#if defined(CLOCK_MONOTONIC) && !defined(__FreeBSD__) && !defined(__APPLE__) && !defined(WIN32) /* Essentially just linux */
 void cgtimer_time(cgtimer_t *ts_start)
 {
   clock_gettime(CLOCK_MONOTONIC, ts_start);
@@ -1987,8 +1987,10 @@ static bool stratum_benchdata(json_t *result, json_t *params, int thr_id)
   json_object_set_new(val, "arch", json_string(arch));
   json_object_set_new(val, "freq", json_integer(defGpuclock));
   json_object_set_new(val, "memf", json_integer(defMemclock));
+#if !defined(__APPLE__)
   json_object_set_new(val, "curr_freq", json_integer(cgpu->gpu_engine));
   json_object_set_new(val, "curr_memf", json_integer(cgpu->gpu_memclock));
+#endif
   json_object_set_new(val, "power", json_integer(watts));
   json_object_set_new(val, "plimit", json_integer(plimit));
   json_object_set_new(val, "khashes", json_real(khashes));
