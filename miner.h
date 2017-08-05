@@ -254,10 +254,12 @@ void nvml_print_devices();
 void nvml_shutdown();
 #endif
 
+#if !defined(__APPLE__)
 #ifdef __linux__
 void sysfs_gpu_temp_and_fanspeed(const unsigned int, float *, int *);
 #else
 inline void sysfs_gpu_temp_and_fanspeed(const unsigned int, float *, int *) {}
+#endif
 #endif
 
 /* Adding a device here will update all macros in the code that use

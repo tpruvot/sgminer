@@ -1254,6 +1254,7 @@ static void reinit_opencl_device(struct cgpu_info *gpu)
 
 static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_info *gpu)
 {
+    #if !defined(__APPLE__)
   float temp = 0;
   int fanspeed = -1;
   if (gpu->has_sysfs) {
@@ -1314,7 +1315,9 @@ static void get_opencl_statline_before(char *buf, size_t bufsiz, struct cgpu_inf
 #endif
   }
   else
+#endif
     gpu->drv->get_statline_before = &blank_get_statline_before;
+    
 }
 
 static void get_opencl_statline(char *buf, size_t bufsiz, struct cgpu_info *gpu)
