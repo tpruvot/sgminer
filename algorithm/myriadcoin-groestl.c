@@ -54,7 +54,7 @@ be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len)
 #ifdef __APPLE_CC__
 static
 #endif
-inline void mghash(void *state, const void *input)
+void mghash(void *state, const void *input)
 {
     sph_groestl512_context ctx_groestl;
     sph_sha256_context ctx_sha2;
