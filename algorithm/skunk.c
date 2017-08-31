@@ -64,7 +64,7 @@ static inline void be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len
     dst[i] = htobe32(src[i]);
 }
 
-static inline void xhash(void *state, const void *input)
+static void xhash(void *state, const void *input)
 {
   init_Xhash_contexts();
 

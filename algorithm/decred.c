@@ -24,7 +24,7 @@ be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len)
 		dst[i] = htobe32(src[i]);
 }
 
-inline void decredhash(void *state, const void *input)
+void decredhash(void *state, const void *input)
 {
 	sph_blake256_context ctx_blake;
 
