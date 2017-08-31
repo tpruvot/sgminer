@@ -52,8 +52,15 @@ static const __constant ulong SHA512_INIT[8] =
 
 #define ROTR64(x, y)	rotate((x), 64UL - (y))
 
-ulong FAST_ROTR64_LO(const uint2 x, const uint y) { return(as_ulong(rotate(x, (uint)y))); }
-ulong FAST_ROTR64_HI(const uint2 x, const uint y) { return(as_ulong(rotate(x, (uint)(y - 32)))); }
+inline uint2 d_bitalign(const uint2 a, const uint2 b, const uint bits) {
+  uint2 res;
+  res.x = (uint) (((((ulong)a.x) << 32U) | (ulong)b.x) >> (bits & 31U));
+  res.y = (uint) (((((ulong)a.y) << 32U) | (ulong)b.y) >> (bits & 31U));
+  return res;
+}
+
+ulong FAST_ROTR64_LO(const uint2 x, const uint y) { return(as_ulong(d_bitalign(x.s10, x, y))); }
+ulong FAST_ROTR64_HI(const uint2 x, const uint y) { return(as_ulong(d_bitalign(x, x.s10, (y - 32)))); }
 
 #define BSG5_0(x) (FAST_ROTR64_LO(as_uint2(x), 28) ^ FAST_ROTR64_HI(as_uint2(x), 34) ^ FAST_ROTR64_HI(as_uint2(x), 39))
 #define BSG5_1(x) (FAST_ROTR64_LO(as_uint2(x), 14) ^ FAST_ROTR64_LO(as_uint2(x), 18) ^ FAST_ROTR64_HI(as_uint2(x), 41))
