@@ -257,7 +257,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     char plat[256] = { 0 };
     status = clGetPlatformInfo(platform, CL_PLATFORM_NAME, sizeof(plat), plat, NULL);
     if (status == CL_SUCCESS) {
-      amd_platform = strstr(plat, "AMD");
+		amd_platform = strstr(plat, "AMD") != 0;
     }
   }
 
@@ -409,7 +409,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       type = 1;
     }
     else {
-      glob_thread_count = 1UL << (cgpu->algorithm.intensity_shift + cgpu->intensity);
+		glob_thread_count = uintptr_t(1) << (cgpu->algorithm.intensity_shift + cgpu->intensity);
       max_int = ((cgpu->dynamic) ? MAX_INTENSITY : cgpu->intensity);
     }
 
@@ -437,7 +437,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         glob_thread_count = cgpu->max_alloc / NEOSCRYPT_SCRATCHBUF_SIZE;
         max_int = glob_thread_count / clState->compute_shaders;
 
-        while (max_int && ((clState->compute_shaders * (1UL << max_int)) > glob_thread_count)) {
+		while (max_int && ((clState->compute_shaders * (uintptr_t(1) << max_int)) > glob_thread_count)) {
           --max_int;
         }
 
@@ -448,12 +448,12 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->xintensity = max_int;
-        glob_thread_count = clState->compute_shaders * (1UL << max_int);
+		glob_thread_count = clState->compute_shaders * (uintptr_t(1) << max_int);
         break;
 
       default:
         glob_thread_count = cgpu->max_alloc / NEOSCRYPT_SCRATCHBUF_SIZE;
-        while (max_int && ((1UL << max_int) & glob_thread_count) == 0) {
+		while (max_int && ((uintptr_t(1) << max_int) & glob_thread_count) == 0) {
           --max_int;
         }
 
@@ -464,7 +464,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->intensity = max_int;
-        glob_thread_count = 1UL << max_int;
+		glob_thread_count = uintptr_t(1) << max_int;
         break;
       }
     }
@@ -494,7 +494,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       type = 1;
     }
     else {
-      glob_thread_count = 1UL << (cgpu->algorithm.intensity_shift + cgpu->intensity);
+		glob_thread_count = uintptr_t(1) << (cgpu->algorithm.intensity_shift + cgpu->intensity);
       max_int = ((cgpu->dynamic) ? MAX_INTENSITY : cgpu->intensity);
     }
 
@@ -522,7 +522,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         glob_thread_count = cgpu->max_alloc / PLUCK_SCRATCHBUF_SIZE;
         max_int = glob_thread_count / clState->compute_shaders;
 
-        while (max_int && ((clState->compute_shaders * (1UL << max_int)) > glob_thread_count)) {
+		while (max_int && ((clState->compute_shaders * (uintptr_t(1) << max_int)) > glob_thread_count)) {
           --max_int;
         }
 
@@ -533,12 +533,12 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->xintensity = max_int;
-        glob_thread_count = clState->compute_shaders * (1UL << max_int);
+		glob_thread_count = clState->compute_shaders * (uintptr_t(1) << max_int);
         break;
 
       default:
         glob_thread_count = cgpu->max_alloc / PLUCK_SCRATCHBUF_SIZE;
-        while (max_int && ((1UL << max_int) & glob_thread_count) == 0) {
+		while (max_int && ((uintptr_t(1) << max_int) & glob_thread_count) == 0) {
           --max_int;
         }
 
@@ -549,7 +549,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->intensity = max_int;
-        glob_thread_count = 1UL << max_int;
+		glob_thread_count = uintptr_t(1) << max_int;
         break;
       }
     }
@@ -579,7 +579,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       type = 1;
     }
     else {
-      glob_thread_count = 1UL << (cgpu->algorithm.intensity_shift + cgpu->intensity);
+		glob_thread_count = uintptr_t(1) << (cgpu->algorithm.intensity_shift + cgpu->intensity);
       max_int = ((cgpu->dynamic) ? MAX_INTENSITY : cgpu->intensity);
     }
 
@@ -607,7 +607,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         glob_thread_count = cgpu->max_alloc / YESCRYPT_SCRATCHBUF_SIZE;
         max_int = glob_thread_count / clState->compute_shaders;
 
-        while (max_int && ((clState->compute_shaders * (1UL << max_int)) > glob_thread_count)) {
+		while (max_int && ((clState->compute_shaders * (uintptr_t(1) << max_int)) > glob_thread_count)) {
           --max_int;
         }
 
@@ -618,12 +618,12 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->xintensity = max_int;
-        glob_thread_count = clState->compute_shaders * (1UL << max_int);
+		glob_thread_count = clState->compute_shaders * (uintptr_t(1) << max_int);
         break;
 
       default:
         glob_thread_count = cgpu->max_alloc / YESCRYPT_SCRATCHBUF_SIZE;
-        while (max_int && ((1UL << max_int) & glob_thread_count) == 0) {
+		while (max_int && ((uintptr_t(1) << max_int) & glob_thread_count) == 0) {
           --max_int;
         }
 
@@ -634,7 +634,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->intensity = max_int;
-        glob_thread_count = 1UL << max_int;
+		glob_thread_count = uintptr_t(1) << max_int;
         break;
       }
     }
@@ -663,7 +663,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       type = 1;
     }
     else {
-      glob_thread_count = 1UL << (cgpu->algorithm.intensity_shift + cgpu->intensity);
+		glob_thread_count = uintptr_t(1) << (cgpu->algorithm.intensity_shift + cgpu->intensity);
       max_int = ((cgpu->dynamic) ? MAX_INTENSITY : cgpu->intensity);
     }
 
@@ -691,7 +691,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         glob_thread_count = cgpu->max_alloc / LYRA_SCRATCHBUF_SIZE;
         max_int = glob_thread_count / clState->compute_shaders;
 
-        while (max_int && ((clState->compute_shaders * (1UL << max_int)) > glob_thread_count)) {
+		while (max_int && ((clState->compute_shaders * (uintptr_t(1) << max_int)) > glob_thread_count)) {
           --max_int;
         }
 
@@ -702,12 +702,12 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->xintensity = max_int;
-        glob_thread_count = clState->compute_shaders * (1UL << max_int);
+		glob_thread_count = clState->compute_shaders * (uintptr_t(1) << max_int);
         break;
 
       default:
         glob_thread_count = cgpu->max_alloc / LYRA_SCRATCHBUF_SIZE;
-        while (max_int && ((1UL << max_int) & glob_thread_count) == 0) {
+		while (max_int && ((uintptr_t(1) << max_int) & glob_thread_count) == 0) {
           --max_int;
         }
 
@@ -718,7 +718,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         }
 
         cgpu->intensity = max_int;
-        glob_thread_count = 1UL << max_int;
+		glob_thread_count = uintptr_t(1) << max_int;
         break;
       }
     }
@@ -980,4 +980,3 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
 
   return clState;
 }
-
