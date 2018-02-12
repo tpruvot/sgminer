@@ -98,7 +98,7 @@ be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len)
 		dst[i] = htobe32(src[i]);
 }
 
-static void maruhash(void *state, const void *input)
+static inline void maruhash(void *state, const void *input)
 {
     init_Mhash_contexts();
     
