@@ -36,8 +36,9 @@ uint32_t EthCalcEpochNumber(uint8_t *SeedHash)
 
 	for(int Epoch = 0; Epoch < 2048; ++Epoch)
 	{
+		if (!memcmp(TestSeedHash, SeedHash, 32))
+			return Epoch;
 		SHA3_256(TestSeedHash, TestSeedHash, 32);
-		if(!memcmp(TestSeedHash, SeedHash, 32)) return(Epoch + 1);
 	}
 
 	applog(LOG_ERR, "Error on epoch calculation.");
