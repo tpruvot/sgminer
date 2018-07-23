@@ -1,4 +1,5 @@
 [submodule "jansson"]
   path = submodules/jansson
   url = https://github.com/akheron/jansson.git
-  
+  branch = 2.8
+  update = rebase
