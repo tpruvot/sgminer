@@ -152,6 +152,9 @@
     <ClCompile Include="..\algorithm\myriadcoin-groestl.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>
+    <ClCompile Include="..\algorithm\phi1612.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
     <ClCompile Include="..\algorithm\quarkcoin.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>

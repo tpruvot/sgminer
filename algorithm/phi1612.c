@@ -1,5 +1,5 @@
 /*-
- * Copyright 2017 tpruvot
+ * Copyright 2016 tpruvot
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,79 +35,79 @@
 #include <string.h>
 
 #include <sph/sph_skein.h>
+#include <sph/sph_jh.h>
 #include <sph/sph_cubehash.h>
 #include <sph/sph_fugue.h>
 #include <sph/gost_streebog.h>
+#include <sph/sph_echo.h>
 
-/* Move init out of loop, so init once externally,
-   and then use one single memcpy with that bigger memory block */
+/* Move init out of loop, so init once externally, and then use one single memcpy with that bigger memory block */
 typedef struct {
-  sph_skein512_context    skein1;
-  sph_cubehash512_context cubehash1;
-  sph_fugue512_context    fugue1;
-  sph_gost512_context     gost1;
+    sph_skein512_context    skein1;
+    sph_jh512_context    jh1;
+    sph_cubehash512_context cubehash1;
+    sph_fugue512_context    fugue1;
+    sph_gost512_context     gost1;
+    sph_echo512_context     echo1;
 } Xhash_context_holder;
 
 static Xhash_context_holder base_contexts;
 
 static void init_Xhash_contexts()
 {
-  sph_skein512_init(&base_contexts.skein1);
-  sph_cubehash512_init(&base_contexts.cubehash1);
-  sph_fugue512_init(&base_contexts.fugue1);
-  sph_gost512_init(&base_contexts.gost1);
+    sph_skein512_init(&base_contexts.skein1);
+    sph_jh512_init(&base_contexts.jh1);
+    sph_cubehash512_init(&base_contexts.cubehash1);
+    sph_fugue512_init(&base_contexts.fugue1);
+    sph_gost512_init(&base_contexts.gost1);
+    sph_echo512_init(&base_contexts.echo1);
 }
 
 static inline void be32enc_vect(uint32_t *dst, const uint32_t *src, uint32_t len)
 {
-  for (uint32_t i = 0; i < len; i++)
-    dst[i] = htobe32(src[i]);
+    for (uint32_t i = 0; i < len; i++)
+        dst[i] = htobe32(src[i]);
 }
 
 static inline void xhash(void *state, const void *input)
 {
-  init_Xhash_contexts();
+    init_Xhash_contexts();
 
-  Xhash_context_holder ctx;
+    Xhash_context_holder ctx;
 
-  uint32_t hash[16];
+    uint32_t hashA[16];
 
-  memcpy(&ctx, &base_contexts, sizeof(base_contexts));
+    memcpy(&ctx, &base_contexts, sizeof(base_contexts));
 
-  sph_skein512(&ctx.skein1, input, 80);
-  sph_skein512_close(&ctx.skein1, hash);
+    sph_skein512(&ctx.skein1, input, 80);
+    sph_skein512_close(&ctx.skein1, hashA);
 
-  sph_cubehash512(&ctx.cubehash1, hash, 64);
-  sph_cubehash512_close(&ctx.cubehash1, hash);
+    sph_jh512(&ctx.jh1, hashA, 64);
+    sph_jh512_close(&ctx.jh1, hashA);
 
-  sph_fugue512(&ctx.fugue1, hash, 64);
-  sph_fugue512_close(&ctx.fugue1, hash);
+    sph_cubehash512(&ctx.cubehash1, hashA, 64);
+    sph_cubehash512_close(&ctx.cubehash1, hashA);
 
-  sph_gost512(&ctx.gost1, hash, 64);
-  sph_gost512_close(&ctx.gost1, hash);
+    sph_fugue512(&ctx.fugue1, hashA, 64);
+    sph_fugue512_close(&ctx.fugue1, hashA);
+    
+    sph_gost512(&ctx.gost1, hashA, 64);
+    sph_gost512_close(&ctx.gost1, hashA);
 
-  memcpy(state, hash, 32);
+    sph_echo512(&ctx.echo1, hashA, 64);
+    sph_echo512_close(&ctx.echo1, hashA);
+
+    memcpy(state, hashA, 32);
 }
 
-void precalc_hash_skein(dev_blk_ctx *blk, uint32_t *midstate, uint32_t *pdata)
+void phi1612_regenhash(struct work *work)
 {
-  uint32_t data[20];
-  sph_skein512_context ctx_skein;
+    uint32_t data[20];
+    uint32_t *nonce = (uint32_t *)(work->data + 76);
+    uint32_t *ohash = (uint32_t *)(work->hash);
 
-  flip80(data, pdata);
-  sph_skein512_init(&ctx_skein);
-  sph_skein512(&ctx_skein, data, 64);
-  if (midstate) memcpy(midstate, &ctx_skein.h0, 9 * sizeof(uint64_t));
-}
-
-void skunk_regenhash(struct work *work)
-{
-  uint32_t data[20];
-  uint32_t *nonce = (uint32_t *)(work->data + 76);
-  uint32_t *ohash = (uint32_t *)(work->hash);
-
-  be32enc_vect(data, (const uint32_t *)work->data, 19);
-
-  data[19] = htobe32(*nonce);
-  xhash(ohash, data);
+    be32enc_vect(data, (const uint32_t *)work->data, 19);
+    //data[19] = 0;
+    data[19] = htobe32(*nonce);
+    xhash(ohash, data);
 }

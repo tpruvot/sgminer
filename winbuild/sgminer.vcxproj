@@ -277,6 +277,7 @@
     <ClCompile Include="..\algorithm\lyra2re.c" />
     <ClCompile Include="..\algorithm\lyra2rev2.c" />
     <ClCompile Include="..\algorithm\neoscrypt.c" />
+    <ClCompile Include="..\algorithm\phi1612.c" />
     <ClCompile Include="..\algorithm\pluck.c" />
     <ClCompile Include="..\algorithm\sibcoin.c" />
     <ClCompile Include="..\algorithm\skein2.c" />
