@@ -1183,9 +1183,7 @@ static cl_int queue_phi2_kernel(struct __clState *clState, struct _dev_blk_ctx *
   CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
   CL_SET_ARG(clState->buffer1);
   CL_SET_ARG(clState->buffer2);
-  // quark_skein512_cpu_hash_64 search8
-  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
-  // phi_final_compress_cuda search9
+  // skein512-64 + xor - search8()
   num = 0;
   CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
   CL_SET_ARG(clState->outputBuffer);
@@ -1473,7 +1471,7 @@ static algorithm_settings_t algos[] = {
   { "darkcoin-mod", ALGO_X11, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 10, 8 * 16 * 4194304, 0, darkcoin_regenhash, NULL, queue_darkcoin_mod_kernel, gen_hash, append_x11_compiler_options },
 
   { "phi", ALGO_PHI1612, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 5, 8 * 16 * 4194304, 0, phi1612_regenhash, precalc_hash_skein, queue_phi_kernel, gen_hash, append_x11_compiler_options },
-  { "phi2", ALGO_PHI2, "", 1, 256, 256, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 9, -1, 0, phi2_regenhash, precalc_hash_cube, queue_phi2_kernel, gen_hash, append_x11_compiler_options },
+  { "phi2", ALGO_PHI2, "", 1, 256, 256, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 8, -1, 0, phi2_regenhash, precalc_hash_cube, queue_phi2_kernel, gen_hash, append_x11_compiler_options },
 
   { "sibcoin-mod", ALGO_SIBCOIN, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 11, 8 * 16 * 4194304, 0, sibcoin_regenhash, NULL, queue_sibcoin_kernel, gen_hash, append_x11_compiler_options },
 

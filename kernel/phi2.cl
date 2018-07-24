@@ -672,7 +672,7 @@ __kernel void search7(__global hash_t* hashes, __global hash_t* branches, __glob
 
 // skein512-64
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void search8(__global hash_t* hashes)
+__kernel void search8(__global hash_t* hashes, __global uint* output, const ulong target)
 {
   uint gid = get_global_id(0);
   __global hash_t *hash = &(hashes[gid-get_global_offset(0)]);
@@ -693,6 +693,7 @@ __kernel void search8(__global hash_t* hashes)
   bcount = 0;
   m0 = m1 = m2 = m3 = m4 = m5 = m6 = m7 = 0;
   UBI_BIG(510, 8);
+#if 0
   hash->h8[0] = (h0);
   hash->h8[1] = (h1);
   hash->h8[2] = (h2);
@@ -701,28 +702,8 @@ __kernel void search8(__global hash_t* hashes)
   hash->h8[5] = (h5);
   hash->h8[6] = (h6);
   hash->h8[7] = (h7);
-
-  barrier(CLK_GLOBAL_MEM_FENCE);
-}
-
-// final compress
-__attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void search9(__global hash_t* hashes, __global uint* output, const ulong target)
-{
-  uint gid = get_global_id(0);
-  __global hash_t *hash = &(hashes[gid-get_global_offset(0)]);
-
-  __global uint2 *pdst = (__global uint2*)((hash));
-  __global uint2 *psrc = (__global uint2*)((hash));
-  uint2 data;
-  data = psrc[4]; pdst[0] ^= data;
-  data = psrc[5]; pdst[1] ^= data;
-  data = psrc[6]; pdst[2] ^= data;
-  data = psrc[7]; pdst[3] ^= data;
-
-  bool result = ((hash->h8[3]) <= target);
-  if (result)
+#endif
+  // final compress
+  if ((h3 ^ h7) <= target)
     output[atomic_inc(output+0xFF)] = SWAP4(gid);
-
-  barrier(CLK_GLOBAL_MEM_FENCE);
 }
