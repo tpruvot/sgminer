@@ -2347,6 +2347,7 @@ static bool getwork_decode(json_t *res_val, struct work *work)
   size_t worklen = 128;
   if (work->pool->algorithm.type == ALGO_CRE) worklen = 168;
   if (work->pool->algorithm.type == ALGO_DECRED) worklen = 192;
+  if (work->pool->algorithm.type == ALGO_PHI2) worklen = 144;
 
   if (unlikely(!jobj_binary(res_val, "data", work->data, worklen, true))) {
     if (opt_morenotices)
@@ -6395,7 +6396,6 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
     data[36] = work->nonce2;
     data[37] = ((rand() * 4) << 8) | work->thr_id;
     memcpy(&data[44], &pool->coinbase[pool->nonce2_offset + pool->n2size], 4);
-    //applog_hex(work->data, 180);
   }
   else {
     data32 = (uint32_t *)merkle_sha;
@@ -6405,6 +6405,13 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
     /* Copy the data template from header_bin */
     memcpy(work->data, pool->header_bin, 128);
     memcpy(work->data + pool->merkle_offset, merkle_root, 32);
+  }
+
+  if (pool->algorithm.type == ALGO_PHI2) {
+    // roots extend 80 standard header size by 2x32 = 144
+    memcpy(work->data, pool->header_bin, 144);
+    memcpy(work->data + pool->merkle_offset, merkle_root, 32);
+    //applog_hex(work->data, 144);
   }
 
   /* Store the stratum work diff to check it still matches the pool's

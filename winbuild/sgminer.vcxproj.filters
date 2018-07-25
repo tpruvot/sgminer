@@ -155,6 +155,9 @@
     <ClCompile Include="..\algorithm\phi1612.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>
+    <ClCompile Include="..\algorithm\phi2.c">
+      <Filter>Source Files\algorithm</Filter>
+    </ClCompile>
     <ClCompile Include="..\algorithm\quarkcoin.c">
       <Filter>Source Files\algorithm</Filter>
     </ClCompile>
@@ -458,6 +461,12 @@
       <Filter>Header Files\algorithm</Filter>
     </ClInclude>
     <ClInclude Include="..\algorithm\sponge.h">
+      <Filter>Header Files\algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\algorithm\phi1612.h">
+      <Filter>Header Files\algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\algorithm\phi2.h">
       <Filter>Header Files\algorithm</Filter>
     </ClInclude>
     <ClInclude Include="..\algorithm\pluck.h">

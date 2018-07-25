@@ -37,7 +37,9 @@
 #include "algorithm/neoscrypt.h"
 #include "algorithm/pluck.h"
 #include "algorithm/yescrypt.h"
+#include "algorithm/lyra2re.h"
 #include "algorithm/lyra2rev2.h"
+#include "algorithm/phi2.h"
 
 #if HAVE_ADL
 #include "adl.h"
@@ -646,10 +648,17 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
   }
 
   // Lyra2re v2 TC
-  else if (cgpu->algorithm.type == ALGO_LYRA2REV2 && !cgpu->opt_tc) {
+  else if ((cgpu->algorithm.type == ALGO_LYRA2REV2 || cgpu->algorithm.type == ALGO_PHI2) && !cgpu->opt_tc) {
     size_t glob_thread_count;
     long max_int;
     unsigned char type = 0;
+
+    size_t scratchbuf_size;
+    if (cgpu->algorithm.type == ALGO_LYRA2REV2) {
+      scratchbuf_size = LYRA2V2_SCRATCHBUF_SIZE;
+    } else {
+      scratchbuf_size = LYRA2X2_SCRATCHBUF_SIZE;
+    }
 
     // determine which intensity type to use
     if (cgpu->rawintensity > 0) {
@@ -670,7 +679,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     glob_thread_count = ((glob_thread_count < cgpu->work_size) ? cgpu->work_size : glob_thread_count);
 
     // if TC * scratchbuf size is too big for memory... reduce to max
-    if ((glob_thread_count * LYRA_SCRATCHBUF_SIZE) >= (uint64_t)cgpu->max_alloc) {
+    if ((glob_thread_count * scratchbuf_size) >= (uint64_t)cgpu->max_alloc) {
 
       /* Selected intensity will not run on this GPU. Not enough memory.
       * Adapt the memory setting. */
@@ -678,7 +687,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       switch (type) {
         //raw intensity
       case 2:
-        while ((glob_thread_count * LYRA_SCRATCHBUF_SIZE) > (uint64_t)cgpu->max_alloc) {
+        while ((glob_thread_count * scratchbuf_size) > (uint64_t)cgpu->max_alloc) {
           --glob_thread_count;
         }
 
@@ -688,7 +697,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
 
         //x intensity
       case 1:
-        glob_thread_count = cgpu->max_alloc / LYRA_SCRATCHBUF_SIZE;
+        glob_thread_count = cgpu->max_alloc / scratchbuf_size;
         max_int = glob_thread_count / clState->compute_shaders;
 
         while (max_int && ((clState->compute_shaders * (1UL << max_int)) > glob_thread_count)) {
@@ -706,7 +715,7 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
         break;
 
       default:
-        glob_thread_count = cgpu->max_alloc / LYRA_SCRATCHBUF_SIZE;
+        glob_thread_count = cgpu->max_alloc / scratchbuf_size;
         while (max_int && ((1UL << max_int) & glob_thread_count) == 0) {
           --max_int;
         }
@@ -837,24 +846,16 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
     if (algorithm->type == ALGO_NEOSCRYPT) {
       /* The scratch/pad-buffer needs 32kBytes memory per thread. */
       bufsize = NEOSCRYPT_SCRATCHBUF_SIZE * cgpu->thread_concurrency;
-
       /* This is the input buffer. For neoscrypt this is guaranteed to be
        * 80 bytes only. */
       readbufsize = 80;
-
       applog(LOG_DEBUG, "Neoscrypt buffer sizes: %lu RW, %lu R", (unsigned long)bufsize, (unsigned long)readbufsize);
-      // scrypt/n-scrypt
     }
     else if (algorithm->type == ALGO_PLUCK) {
       /* The scratch/pad-buffer needs 32kBytes memory per thread. */
       bufsize = PLUCK_SCRATCHBUF_SIZE * cgpu->thread_concurrency;
-
-      /* This is the input buffer. For pluck this is guaranteed to be
-      * 80 bytes only. */
       readbufsize = 80;
-
       applog(LOG_DEBUG, "pluck buffer sizes: %lu RW, %lu R", (unsigned long)bufsize, (unsigned long)readbufsize);
-      // scrypt/n-scrypt
     }
     else if (algorithm->type == ALGO_YESCRYPT || algorithm->type == ALGO_YESCRYPT_MULTI) {
       /* The scratch/pad-buffer needs 32kBytes memory per thread. */
@@ -865,21 +866,23 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       /* This is the input buffer. For yescrypt this is guaranteed to be
       * 80 bytes only. */
       readbufsize = 80;
-
       applog(LOG_DEBUG, "yescrypt buffer sizes: %lu RW, %lu R", (unsigned long)bufsize, (unsigned long)readbufsize);
       // scrypt/n-scrypt
     }
     else if (algorithm->type == ALGO_LYRA2REV2) {
       /* The scratch/pad-buffer needs 32kBytes memory per thread. */
-      bufsize = LYRA_SCRATCHBUF_SIZE * cgpu->thread_concurrency;
-      buf1size = 4* 8 * cgpu->thread_concurrency; //matrix
-
-      /* This is the input buffer. For yescrypt this is guaranteed to be
-      * 80 bytes only. */
-      readbufsize = 80;
-
+      bufsize = LYRA2V2_SCRATCHBUF_SIZE * cgpu->thread_concurrency;
+      buf1size = 4 * 8 * cgpu->thread_concurrency; // matrix
+      readbufsize = 80; // input size
       applog(LOG_DEBUG, "lyra2REv2 buffer sizes: %lu RW, %lu RW", (unsigned long)bufsize, (unsigned long)buf1size);
-      // scrypt/n-scrypt
+    }
+    else if (algorithm->type == ALGO_PHI2) {
+      readbufsize = 144; // input size
+      bufsize = 64 * cgpu->thread_concurrency; // 512bits hashes
+      buf1size = 64 * cgpu->thread_concurrency; // branch hashes
+      buf2size = 4 * cgpu->thread_concurrency;  // branch nonces
+      buf3size = LYRA2X2_SCRATCHBUF_SIZE * cgpu->thread_concurrency; // matrix
+      applog(LOG_DEBUG, "phi2 buffer sizes: %lu RW, %lu RW", (unsigned long)buf3size, (unsigned long)buf1size);
     }
     else {
       size_t ipt = (algorithm->n / cgpu->lookup_gap + (algorithm->n % cgpu->lookup_gap > 0));
@@ -932,6 +935,23 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize, algorithm_t *alg
       clState->buffer1 = clCreateBuffer(clState->context, CL_MEM_READ_WRITE, buf1size, NULL, &status);
       if (status != CL_SUCCESS && !clState->buffer1) {
         applog(LOG_DEBUG, "Error %d: clCreateBuffer (buffer1), decrease TC or increase LG", status);
+        return NULL;
+      }
+    }
+    else if (algorithm->type == ALGO_PHI2) {
+      clState->buffer1 = clCreateBuffer(clState->context, CL_MEM_READ_WRITE, buf1size, NULL, &status);
+      if (status != CL_SUCCESS && !clState->buffer1) {
+        applog(LOG_DEBUG, "Error %d: clCreateBuffer (buffer1), decrease TC or increase LG", status);
+        return NULL;
+      }
+      clState->buffer2 = clCreateBuffer(clState->context, CL_MEM_READ_WRITE, buf2size, NULL, &status);
+      if (status != CL_SUCCESS && !clState->buffer2) {
+        applog(LOG_DEBUG, "Error %d: clCreateBuffer (buffer2), decrease TC or increase LG", status);
+        return NULL;
+      }
+      clState->buffer3 = clCreateBuffer(clState->context, CL_MEM_READ_WRITE, buf3size, NULL, &status);
+      if (status != CL_SUCCESS && !clState->buffer3) {
+        applog(LOG_DEBUG, "Error %d: clCreateBuffer (buffer3), decrease TC or increase LG", status);
         return NULL;
       }
     }

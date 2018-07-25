@@ -768,6 +768,20 @@ static inline void flip128(void *dest_p, const void *src_p)
     dest[i] = swab32(src[i]);
 }
 
+static inline cl_int flip144(void *dest_p, const void *src_p)
+{
+  cl_int ret = 0;
+  uint32_t *dest = (uint32_t *)dest_p;
+  const uint32_t *src = (uint32_t *)src_p;
+  int i;
+
+  for (i = 0; i < 36; i++) {
+    dest[i] = swab32(src[i]);
+    if (i > 20 && i <= 28 && src[i]) ret = 1;
+  }
+  return ret;
+}
+
 static inline void flip168(void *dest_p, const void *src_p)
 {
 	uint32_t *dest = (uint32_t *)dest_p;
@@ -1476,7 +1490,7 @@ struct pool {
   /* Shared by both stratum & GBT */
   unsigned char *coinbase;
   size_t nonce2_offset;
-  unsigned char header_bin[128];
+  unsigned char header_bin[192];
   double next_diff;
   int merkle_offset;
 

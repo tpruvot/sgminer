@@ -3,6 +3,8 @@
 
 #include "miner.h"
 
+#define LYRA2RE_SCRATCHBUF_SIZE 6144
+
 extern int lyra2re_test(unsigned char *pdata, const unsigned char *ptarget,
 			uint32_t nonce);
 extern void lyra2re_regenhash(struct work *work);

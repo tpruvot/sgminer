@@ -278,6 +278,7 @@
     <ClCompile Include="..\algorithm\lyra2rev2.c" />
     <ClCompile Include="..\algorithm\neoscrypt.c" />
     <ClCompile Include="..\algorithm\phi1612.c" />
+    <ClCompile Include="..\algorithm\phi2.c" />
     <ClCompile Include="..\algorithm\pluck.c" />
     <ClCompile Include="..\algorithm\sibcoin.c" />
     <ClCompile Include="..\algorithm\skein2.c" />
@@ -354,6 +355,8 @@
     <ClInclude Include="..\algorithm\lyra2re.h" />
     <ClInclude Include="..\algorithm\lyra2rev2.h" />
     <ClInclude Include="..\algorithm\neoscrypt.h" />
+    <ClInclude Include="..\algorithm\phi1612.h" />
+    <ClInclude Include="..\algorithm\phi2.h" />
     <ClInclude Include="..\algorithm\pluck.h" />
     <ClInclude Include="..\algorithm\sponge.h" />
     <ClInclude Include="..\algorithm\sysendian.h" />

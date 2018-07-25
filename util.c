@@ -1508,26 +1508,32 @@ static bool parse_notify(struct pool *pool, json_t *val)
 {
   char *job_id, *prev_hash, *coinbase1, *coinbase2, *bbversion, *nbit,
        *ntime, *header;
+  char *roots = NULL;
+  char rootpadding[96+1] = "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
   size_t cb1_len, cb2_len, alloc_len;
   unsigned char *cb1, *cb2;
   bool clean, ret = false;
-  int merkles, i;
+  int merkles, i = 0;
   json_t *arr;
 
-  arr = json_array_get(val, 4);
+  bool has_roots = json_array_size(val) == 10 && pool->algorithm.type == ALGO_PHI2;
+
+  job_id = json_array_string(val, i++);
+  prev_hash = json_array_string(val, i++);
+  if (has_roots)
+    roots = json_array_string(val, i++);
+  coinbase1 = json_array_string(val, i++);
+  coinbase2 = json_array_string(val, i++);
+
+  arr = json_array_get(val, i++);
   if (!arr || !json_is_array(arr))
     goto out;
-
   merkles = json_array_size(arr);
 
-  job_id = json_array_string(val, 0);
-  prev_hash = json_array_string(val, 1);
-  coinbase1 = json_array_string(val, 2);
-  coinbase2 = json_array_string(val, 3);
-  bbversion = json_array_string(val, 5);
-  nbit = json_array_string(val, 6);
-  ntime = json_array_string(val, 7);
-  clean = json_is_true(json_array_get(val, 8));
+  bbversion = json_array_string(val, i++);
+  nbit = json_array_string(val, i++);
+  ntime = json_array_string(val, i++);
+  clean = json_is_true(json_array_get(val, i));
 
   if (!job_id || !prev_hash || !coinbase1 || !coinbase2 || !bbversion || !nbit || !ntime) {
     /* Annoying but we must not leak memory */
@@ -1535,6 +1541,8 @@ static bool parse_notify(struct pool *pool, json_t *val)
       free(job_id);
     if (prev_hash)
       free(prev_hash);
+    if (roots)
+      free(roots);
     if (coinbase1)
       free(coinbase1);
     if (coinbase2)
@@ -1595,19 +1603,24 @@ static bool parse_notify(struct pool *pool, json_t *val)
   /* nonce */    8 +
   /* workpadding */  96;
   pool->merkle_offset /= 2;
+  if (roots)
+    pool->swork.header_len += strlen(roots); // 128
+  // todo: seems too big, useless memory
   pool->swork.header_len = pool->swork.header_len * 2 + 1;
   align_len(&pool->swork.header_len);
   header = (char *)alloca(pool->swork.header_len);
   snprintf(header, pool->swork.header_len,
-    "%s%s%s%s%s%s%s",
+    "%s%s%s%s%s%s%s%s",
     pool->swork.bbversion,
     pool->swork.prev_hash,
     blank_merkel,
     pool->swork.ntime,
     pool->swork.nbit,
     "00000000", /* nonce */
-    workpadding);
-  if (unlikely(!hex2bin(pool->header_bin, header, 128))) {
+    roots ? roots : "",
+    roots ? rootpadding : workpadding);
+  // header_bin size is a padded multiple of 64-bytes
+  if (unlikely(!hex2bin(pool->header_bin, header, roots ? 192 : 128))) {
     applog(LOG_WARNING, "%s: Failed to convert header to header_bin, got %s", __func__, header);
     pool_failed(pool);
     // TODO: memory leaks? goto out, clean up there?

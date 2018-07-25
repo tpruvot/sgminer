@@ -35,6 +35,7 @@
 #include "algorithm/lyra2re.h"
 #include "algorithm/lyra2rev2.h"
 #include "algorithm/phi1612.h"
+#include "algorithm/phi2.h"
 #include "algorithm/pluck.h"
 #include "algorithm/yescrypt.h"
 #include "algorithm/credits.h"
@@ -74,6 +75,7 @@ const char *algorithm_type_str[] = {
   "Lyra2RE",
   "Lyra2REV2"
   "Phi",
+  "Phi2",
   "Pluck"
   "Yescrypt",
   "Yescrypt-multi",
@@ -1143,6 +1145,55 @@ static cl_int queue_phi_kernel(struct __clState *clState, struct _dev_blk_ctx *b
 	return status;
 }
 
+static cl_int queue_phi2_kernel(struct __clState *clState, struct _dev_blk_ctx *blk, __maybe_unused cl_uint threads)
+{
+  cl_kernel *kernel;
+  unsigned int num;
+  cl_ulong le_target = *(cl_ulong *)(blk->work->device_target + 24);
+  cl_int has_roots = flip144(clState->cldata, blk->work->data);
+  cl_int status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, has_roots ? 144 : 80, clState->cldata, 0, NULL, NULL);
+
+  // cubehash512_cuda_hash_80/144 - search
+  kernel = &clState->kernel;
+  num = 0;
+  CL_SET_ARG(clState->CLbuffer0);
+  CL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(has_roots);
+
+  kernel = clState->extra_kernels;
+  // lyra2_cuda_hash_64 - search1
+  num = 0;
+  CL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->buffer3);
+  // quark_jh512_cpu_hash_64 - search2
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // phi_filter_cuda - search3
+  num = 0;
+  CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->buffer1);
+  CL_SET_ARG(clState->buffer2);
+  // streebog_cpu_hash_64 - search4
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // x11_echo512_cpu_hash_64 search5
+  CL_NEXTKERNEL_SET_ARG_0(clState->buffer1);
+  // x11_echo512_cpu_hash_64 search6
+  CL_NEXTKERNEL_SET_ARG_0(clState->buffer1);
+  // phi_merge search7
+  num = 0;
+  CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->buffer1);
+  CL_SET_ARG(clState->buffer2);
+  // quark_skein512_cpu_hash_64 search8
+  CL_NEXTKERNEL_SET_ARG_0(clState->padbuffer8);
+  // phi_final_compress_cuda search9
+  num = 0;
+  CL_NEXTKERNEL_SET_ARG(clState->padbuffer8);
+  CL_SET_ARG(clState->outputBuffer);
+  CL_SET_ARG(le_target);
+
+  return status;
+}
+
 static cl_int queue_pluck_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_unused cl_uint threads)
 {
   cl_kernel *kernel = &clState->kernel;
@@ -1422,6 +1473,7 @@ static algorithm_settings_t algos[] = {
   { "darkcoin-mod", ALGO_X11, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 10, 8 * 16 * 4194304, 0, darkcoin_regenhash, NULL, queue_darkcoin_mod_kernel, gen_hash, append_x11_compiler_options },
 
   { "phi", ALGO_PHI1612, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 5, 8 * 16 * 4194304, 0, phi1612_regenhash, precalc_hash_skein, queue_phi_kernel, gen_hash, append_x11_compiler_options },
+  { "phi2", ALGO_PHI2, "", 1, 256, 256, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 9, -1, 0, phi2_regenhash, precalc_hash_cube, queue_phi2_kernel, gen_hash, append_x11_compiler_options },
 
   { "sibcoin-mod", ALGO_SIBCOIN, "", 1, 1, 1, 0, 0, 0xFF, 0xFFFFULL, 0x0000ffffUL, 11, 8 * 16 * 4194304, 0, sibcoin_regenhash, NULL, queue_sibcoin_kernel, gen_hash, append_x11_compiler_options },
 
@@ -1547,6 +1599,7 @@ static const char *lookup_algorithm_alias(const char *lookup_alias, uint8_t *nfa
   ALGO_ALIAS("doubleskein", "skein2");
   ALGO_ALIAS("woodcoin", "skein2");
   ALGO_ALIAS("phi1612", "phi");
+  ALGO_ALIAS("phi2-sc", "phi2");
   ALGO_ALIAS("skunkhash", "skunk");
   ALGO_ALIAS("signatum", "skunk");
   ALGO_ALIAS("thorsriddle", "veltor");
