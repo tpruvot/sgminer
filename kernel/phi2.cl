@@ -412,14 +412,14 @@ __kernel void search2(__global hash_t* hashes)
 
 // phi filter branch
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void search3(__global hash_t* hashes, __global hash_t* branches, __global hash_t* nonceBranches)
+__kernel void search3(__global hash_t* hashes, __global hash_t* branches, __global uint* nonceBranches)
 {
   uint gid = get_global_id(0);
   __global hash_t *hash = &(hashes[gid-get_global_offset(0)]);
   __global hash_t *branch = &(branches[gid-get_global_offset(0)]);
-  __global hash_t *nonceBranch = &(nonceBranches[gid-get_global_offset(0)]);
-  nonceBranch->h1[0] = hash->h1[0] & 1;
-  if (nonceBranch->h1[0]) return;
+  __global uint *nonceBranch = &(nonceBranches[gid-get_global_offset(0)]);
+  *nonceBranch = hash->h1[0] & 1;
+  if (*nonceBranch) return;
 
   __global uint4 *pdst = (__global uint4*)((branch));
   __global uint4 *psrc = (__global uint4*)((hash));
@@ -563,7 +563,7 @@ __kernel void search5(__global hash_t* hashes)
   barrier(CLK_GLOBAL_MEM_FENCE);
 }
 
-  // echo512-64
+// echo512-64
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
 __kernel void search6(__global hash_t* hashes)
 {
@@ -653,13 +653,13 @@ __kernel void search6(__global hash_t* hashes)
 
 // merge the 2 branches
 __attribute__((reqd_work_group_size(WORKSIZE, 1, 1)))
-__kernel void search7(__global hash_t* hashes, __global hash_t* branches, __global hash_t* nonceBranches)
+__kernel void search7(__global hash_t* hashes, __global hash_t* branches, __global uint* nonceBranches)
 {
   uint gid = get_global_id(0);
   __global hash_t *hash = &(hashes[gid-get_global_offset(0)]);
   __global hash_t *branch = &(branches[gid-get_global_offset(0)]);
-  __global hash_t *nonceBranch = &(nonceBranches[gid-get_global_offset(0)]);
-  if (nonceBranch->h1[0]) return;
+  __global uint *nonceBranch = &(nonceBranches[gid-get_global_offset(0)]);
+  if (*nonceBranch) return;
   __global uint4 *pdst = (__global uint4*)((hash));
   __global uint4 *psrc = (__global uint4*)((branch));
   uint4 data;
